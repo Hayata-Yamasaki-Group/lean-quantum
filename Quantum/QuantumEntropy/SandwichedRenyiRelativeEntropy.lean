@@ -6,7 +6,6 @@ Authors:
 
 import Quantum.QuantumEntropy.YoungInequality
 import Quantum.QuantumMechanics.QuantumChannel
-import Quantum.QuantumMechanics.NaimarkExtension
 import Quantum.TraceInequality.LiebAndoTrace
 import Quantum.QuantumEntropy.TensorCFC
 import Quantum.QuantumEntropy.HaarUnitary
@@ -1211,7 +1210,7 @@ set_option backward.isDefEq.respectTransparency false in
 /-- Concavity of the σ-term on `pdSetLM`: `σ ↦ Re Tr((σ^β H σ^β)^q)` is concave
     for `1/2 ≤ α`, `α ≠ 1` and `H ∈ pdSetLM`.
     Uses `traceConjPow_concave` and eigenvalue similarity. -/
-private lemma sigma_term_concaveOn {α : ℝ} (hα0 : 0 < α) (hα_ne1 : α ≠ 1) (hα_ge : 1 / 2 ≤ α)
+lemma sigma_term_concaveOn {α : ℝ} (hα0 : 0 < α) (hα_ne1 : α ≠ 1) (hα_ge : 1 / 2 ≤ α)
     {H : L ℋ} (hH : H ∈ pdSetLM (ℋ := ℋ)) :
     ConcaveOn ℝ (pdSetLM (ℋ := ℋ)) (fun σ =>
       (Tr (CFC.rpow (CFC.rpow σ ((α - 1) / (2 * α)) * H * CFC.rpow σ ((α - 1) / (2 * α)))
@@ -1236,7 +1235,7 @@ private lemma sigma_term_concaveOn {α : ℝ} (hα0 : 0 < α) (hα_ne1 : α ≠ 
   exact h_concave.2 hσ₁ hσ₂ ha hb hab
 
 /-- The variational optimizer: `H_opt = P (P ρ P)^{α-1} P` with `P = σ^{(1-α)/(2α)}`. -/
-private noncomputable def quasiVarOpt (α : ℝ) (ρ σ : L ℋ) : L ℋ :=
+noncomputable def quasiVarOpt (α : ℝ) (ρ σ : L ℋ) : L ℋ :=
   CFC.rpow σ ((1 - α) / (2 * α)) *
     CFC.rpow (CFC.rpow σ ((1 - α) / (2 * α)) * ρ *
       CFC.rpow σ ((1 - α) / (2 * α))) (α - 1) *
@@ -1253,7 +1252,7 @@ private lemma rpow_conj_pdSetLM {β q : ℝ}
 
 omit [Nontrivial ℋ] in
 set_option backward.isDefEq.respectTransparency false in
-private lemma quasiVarOpt_pdSetLM {α : ℝ} (hα0 : 0 < α) (hα_ne1 : α ≠ 1)
+lemma quasiVarOpt_pdSetLM {α : ℝ} (hα0 : 0 < α) (hα_ne1 : α ≠ 1)
     {ρ σ : L ℋ} (hρ : ρ ∈ pdSetLM (ℋ := ℋ)) (hσ : σ ∈ pdSetLM (ℋ := ℋ)) :
     quasiVarOpt α ρ σ ∈ pdSetLM (ℋ := ℋ) := by
   have hβ'_ne : (1 - α) / (2 * α) ≠ 0 :=
@@ -1267,7 +1266,7 @@ private lemma quasiVarOpt_pdSetLM {α : ℝ} (hα0 : 0 < α) (hα_ne1 : α ≠ 1
 set_option maxHeartbeats 400000 in
 -- heartbeats raised: section-level backward.isDefEq.respectTransparency false increases whnf cost
 omit [Nontrivial ℋ] in
-private lemma quasiVarOpt_eq_quasi_gt {α : ℝ} (hα : 1 < α)
+lemma quasiVarOpt_eq_quasi_gt {α : ℝ} (hα : 1 < α)
     {ρ σ : L ℋ} (hρ : ρ ∈ pdSetLM (ℋ := ℋ)) (hσ : σ ∈ pdSetLM (ℋ := ℋ)) :
     quasiVar α ρ σ (quasiVarOpt α ρ σ) = sandwichedQuasi α ρ σ := by
   have hρ_pos := (LinearMap.nonneg_iff_isPositive ρ).mp (nonneg_of_pdSetLM hρ)
@@ -1412,11 +1411,43 @@ private lemma isPositive_of_pdSetLM {A : L ℋ} (hA : A ∈ pdSetLM (ℋ := ℋ)
   (LinearMap.nonneg_iff_isPositive A).mp (nonneg_of_pdSetLM hA)
 
 omit [Nontrivial ℋ] in
-private lemma trace_H_mul_combo_re (H ρ₁ ρ₂ : L ℋ) (θ : ℝ) :
+lemma trace_H_mul_combo_re (H ρ₁ ρ₂ : L ℋ) (θ : ℝ) :
     (Tr (H * ((1 - θ) • ρ₁ + θ • ρ₂))).re =
     (1 - θ) * (Tr (H * ρ₁)).re + θ * (Tr (H * ρ₂)).re := by
   rw [mul_add, mul_smul_comm, mul_smul_comm]
   exact trace_re_convex_combo θ (H * ρ₁) (H * ρ₂)
+
+/-- Joint convexity of `(ρ, σ) ↦ Re quasiVar α ρ σ H` on `pdSetLM × pdSetLM` for a fixed
+    pd `H` and `α > 1`. The `ρ`-term is linear, the `σ`-term concave with coefficient
+    `−(α−1) < 0`. (Used to extend joint convexity to the psd cone in the DPI proof.) -/
+theorem quasiVar_re_jointlyConvex_pdSetLM {α : ℝ} (hα : 1 < α)
+    {H : L ℋ} (hH : H ∈ pdSetLM (ℋ := ℋ)) :
+    JointlyConvexOn (pdSetLM (ℋ := ℋ)) (pdSetLM (ℋ := ℋ))
+      (fun ρ σ => (quasiVar α ρ σ H).re) := by
+  intro ρ₁ ρ₂ σ₁ σ₂ θ hρ₁ hρ₂ hσ₁ hσ₂ hθ0 hθ1
+  simp only [smul_eq_mul]
+  have hα0 : (0 : ℝ) < α := by linarith
+  have hα_ne1 : α ≠ 1 := ne_of_gt hα
+  have hα_ge : (1 : ℝ) / 2 ≤ α := by linarith
+  set ρ_c := (1 - θ) • ρ₁ + θ • ρ₂ with hρc_def
+  set σ_c := (1 - θ) • σ₁ + θ • σ₂ with hσc_def
+  have h_sigma_concave := sigma_term_concaveOn hα0 hα_ne1 hα_ge hH
+  have h_sigma_ineq : (1 - θ) * (Tr (CFC.rpow (CFC.rpow σ₁ ((α - 1) / (2 * α)) * H *
+          CFC.rpow σ₁ ((α - 1) / (2 * α))) (α / (α - 1)))).re +
+      θ * (Tr (CFC.rpow (CFC.rpow σ₂ ((α - 1) / (2 * α)) * H *
+          CFC.rpow σ₂ ((α - 1) / (2 * α))) (α / (α - 1)))).re ≤
+      (Tr (CFC.rpow (CFC.rpow σ_c ((α - 1) / (2 * α)) * H *
+          CFC.rpow σ_c ((α - 1) / (2 * α))) (α / (α - 1)))).re :=
+    h_sigma_concave.2 hσ₁ hσ₂ (by linarith : (0 : ℝ) ≤ 1 - θ) hθ0 (by linarith)
+  have h_trace_lin : (Tr (H * ρ_c)).re = (1 - θ) * (Tr (H * ρ₁)).re + θ * (Tr (H * ρ₂)).re := by
+    change (Tr (H * ((1 - θ) • ρ₁ + θ • ρ₂))).re = _
+    exact trace_H_mul_combo_re H ρ₁ ρ₂ θ
+  change (quasiVar α ρ_c σ_c H).re ≤
+    (1 - θ) * (quasiVar α ρ₁ σ₁ H).re + θ * (quasiVar α ρ₂ σ₂ H).re
+  unfold quasiVar
+  simp only [Complex.sub_re, Complex.re_ofReal_mul]
+  have hα1_pos : (0 : ℝ) < α - 1 := by linarith
+  nlinarith [h_trace_lin, h_sigma_ineq]
 
 set_option backward.isDefEq.respectTransparency false in
 /-- Joint convexity of `(ρ, σ) ↦ Re Q_α(ρ‖σ)` on `pdSetLM × pdSetLM` for `α > 1`. -/
@@ -1655,28 +1686,30 @@ variable {ℋ : Type u₅} [Qudit ℋ] [Nontrivial ℋ]
 set_option linter.style.longLine false
 
 omit [Nontrivial ℋ] in
-/-- Pure-state Stinespring isometry from a Kraus family `A : κ → L ℋ` satisfying
-    `Σ_a A_a* A_a = I`. The map `V ψ := Σ_a (A_a ψ) ⊗ e_a` is a linear isometry
+/-- Pure-state Stinespring isometry from a Kraus family `A : κ → (ℋ →ₗ[ℂ] 𝒦)`
+    (possibly different input/output spaces) satisfying `Σ_a A_a* A_a = I_ℋ`.
+    The map `V ψ := Σ_a (A_a ψ) ⊗ e_a` is a linear isometry `ℋ → 𝒦 ⊗ ℂ^κ`
     realizing the channel `γ ↦ Σ_a A_a γ A_a*` as `TrRight(V γ V*)`. -/
 private lemma kraus_to_pure_stinespring_isometry
+    {𝒦 : Type u₅} [Qudit 𝒦]
     {κ : Type u₅} [Fintype κ] [DecidableEq κ]
-    (A : κ → L ℋ)
+    (A : κ → (ℋ →ₗ[ℂ] 𝒦))
     (hSumAA : (∑ a : κ, (LinearMap.adjoint (A a)).comp (A a)) = (1 : L ℋ)) :
-    ∃ V : ℋ →ₗ[ℂ] ℋ ⊗[ℂ] EuclideanSpace ℂ κ,
+    ∃ V : ℋ →ₗ[ℂ] 𝒦 ⊗[ℂ] EuclideanSpace ℂ κ,
       (LinearMap.adjoint V).comp V = (1 : L ℋ) ∧
       ∀ γ : L ℋ,
         (∑ a : κ, (A a).comp (γ.comp (LinearMap.adjoint (A a)))) =
           TrRight ((V.comp γ).comp (LinearMap.adjoint V)) := by
   classical
   -- The Stinespring isometry from QuantumChannel.lean.
-  refine ⟨krausToStinespringOperator (ℋ₁ := ℋ) (ℋ₂ := ℋ) A, ?_, ?_⟩
+  refine ⟨krausToStinespringOperator (ℋ₁ := ℋ) (ℋ₂ := 𝒦) A, ?_, ?_⟩
   · -- `V* V = Σ_a A_a* A_a = 1` by `hSumAA`.
-    set V := krausToStinespringOperator (ℋ₁ := ℋ) (ℋ₂ := ℋ) A with hV_def
+    set V := krausToStinespringOperator (ℋ₁ := ℋ) (ℋ₂ := 𝒦) A with hV_def
     apply LinearMap.ext
     intro ψ
     -- Reduce to computing `(V* V) ψ` directly.
     have hVψ : V ψ = ∑ a : κ, (A a ψ) ⊗ₜ[ℂ] (EuclideanSpace.basisFun κ ℂ a) :=
-      krausToStinespringOperator_apply (ℋ₁ := ℋ) (ℋ₂ := ℋ) A ψ
+      krausToStinespringOperator_apply (ℋ₁ := ℋ) (ℋ₂ := 𝒦) A ψ
     have hcomp : (V.adjoint.comp V) ψ = V.adjoint (V ψ) := rfl
     rw [hcomp, hVψ, map_sum]
     have hpiece : ∀ a : κ,
@@ -1685,7 +1718,7 @@ private lemma kraus_to_pure_stinespring_isometry
       intro a
       simpa [hV_def] using
         adjoint_krausToStinespringOperator_tmul_basisFun
-          (ℋ₁ := ℋ) (ℋ₂ := ℋ) A (A a ψ) a
+          (ℋ₁ := ℋ) (ℋ₂ := 𝒦) A (A a ψ) a
     -- Replace each summand and recognize `Σ_a A_a* A_a = 1`.
     simp_rw [hpiece]
     have hSumApp :
@@ -1699,162 +1732,118 @@ private lemma kraus_to_pure_stinespring_isometry
     rw [hsum_eq, hSumApp]
   · -- Partial-trace identity: this is exactly `trRight_kraus`.
     intro γ
-    have h := trRight_kraus (ℋ₁ := ℋ) (ℋ₂ := ℋ) A γ
+    have h := trRight_kraus (ℋ₁ := ℋ) (ℋ₂ := 𝒦) A γ
     exact h.symm
 
-/-- Kraus-to-unitary dilation (technical core of Watrous Cor. 2.27 in unitary
-    form). Given a Kraus family `A : κ → L ℋ` with `Σ_a A_a* A_a = I` and
-    `card κ ≤ d²` (`d := finrank ℂ ℋ`), there exists a unitary `U` on
-    `ℋ ⊗ ℋ` realizing the channel `γ ↦ Σ_a A_a γ A_a*` as
-    `Tr₂[U ((I/d) ⊗ γ) U*]`. -/
-private lemma kraus_to_unitary_dilation_aux
-    {κ : Type*} [Fintype κ]
-    (A : κ → L ℋ)
-    (hSumAA : (∑ a : κ, (LinearMap.adjoint (A a)).comp (A a)) = (1 : L ℋ))
-    (hκ_card_le :
-      Fintype.card κ ≤ Module.finrank ℂ ℋ * Module.finrank ℂ ℋ) :
-    ∃ U : unitary (L (ℋ ⊗[ℂ] ℋ)), ∀ γ : L ℋ,
-      (∑ a : κ, (A a).comp (γ.comp (LinearMap.adjoint (A a)))) =
-        Tr₂ ((U : L (ℋ ⊗[ℂ] ℋ)) *
-            TensorProduct.map
-              (((Module.finrank ℂ ℋ : ℂ)⁻¹) • (1 : L ℋ)) γ *
-            star (U : L (ℋ ⊗[ℂ] ℋ))) :=
-  NaimarkExtension.exists_naimark_unitary_dilation A hSumAA hκ_card_le
+/-- **Stinespring dilation theorem (Form A, isometric / pure-environment form).**
 
-/-- **Stinespring dilation theorem** (cf. Watrous, Corollary 2.27, in unitary form
-    with a positive-definite density matrix on the environment).
+    Every quantum channel `E : CPTP ℋ 𝒦` (possibly different input/output
+    spaces) admits an *isometric* Stinespring dilation: there exists a
+    finite-dimensional environment Hilbert space
+    `ℋ_env`, a linear map `V : ℋ →ₗ[ℂ] (𝒦 ⊗ ℋ_env)` satisfying
+      `V*V = I_ℋ` (isometry),
+    and
+      `E(γ) = TrRight(V γ V*)` for every `γ : L ℋ`,
+    where `TrRight` traces out the *second* (environment) factor.
 
-    Every quantum channel `E : CPTP ℋ ℋ` admits a Stinespring dilation
-      `E(γ) = Tr₂[U (τ ⊗ γ) U*]`
-    where `ℋ_env` is a finite-dimensional environment Hilbert space, `τ` is a
-    positive-definite density matrix on `ℋ_env`, and `U` is a unitary on
-    `ℋ_env ⊗ ℋ`. Here `Tr₂` traces out the environment (first) factor.
+    This is the form directly available from
+    `QuantumChannel.cp_to_stinespring` strengthened by trace preservation,
+    and matches **Watrous Cor. 2.27** in its pure-environment incarnation
+    (also Frank–Lieb arXiv:1306.5358 with `τ` chosen pure).
 
-    The standard Watrous form gives an isometry `A : ℋ → ℋ ⊗ ℋ_env` with
-    `A* A = I` and `E(γ) = Tr_env[A γ A*]`. The unitary form follows by completing
-    `A` to a unitary on `ℋ_env ⊗ ℋ`; the density matrix `τ` may be chosen
-    positive-definite by enlarging the environment if necessary. -/
-theorem CPTP.exists_stinespring_dilation (E : CPTP ℋ ℋ) :
+    The previous unitary form
+      `E(γ) = Tr₂(U (τ ⊗ γ) U*)`
+    with positive-definite `τ` on the environment (Form B / Naimark) is
+    strictly stronger and is **not** used downstream after the present
+    refactor; the data-processing inequality is proved directly from this
+    Form A statement following the Frank–Lieb scheme. -/
+theorem CPTP.exists_stinespring_dilation {𝒦 : Type u₅} [Qudit 𝒦] (E : CPTP ℋ 𝒦) :
     ∃ (ℋ_env : Type u₅) (_ : Qudit ℋ_env) (_ : Nontrivial ℋ_env)
-      (τ : L ℋ_env), τ.IsPositive ∧ IsUnit τ ∧ Tr τ = 1 ∧
-      ∃ U : unitary (L (ℋ_env ⊗[ℂ] ℋ)),
+      (V : ℋ →ₗ[ℂ] (𝒦 ⊗[ℂ] ℋ_env)),
+        (LinearMap.adjoint V).comp V = (1 : L ℋ) ∧
         ∀ γ : L ℋ,
-          E.toFun γ = Tr₂ ((U : L (ℋ_env ⊗[ℂ] ℋ)) *
-            TensorProduct.map τ γ *
-            star (U : L (ℋ_env ⊗[ℂ] ℋ))) := by
-  refine ⟨ℋ, inferInstance, inferInstance, ?_⟩
-  set d : ℕ := Module.finrank ℂ ℋ with hd_def
-  have hd_pos : 0 < d := Module.finrank_pos
-  have hd_ne_c : (d : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hd_pos.ne'
-  -- τ := I/d (maximally mixed state on the environment).
-  set τ : L ℋ := ((d : ℂ)⁻¹) • (1 : L ℋ) with hτ_def
-  refine ⟨τ, ?hτ_pos, ?hτ_unit, ?hτ_tr, ?hU⟩
-  case hτ_pos =>
-    apply LinearMap.isPositive_one.smul_of_nonneg
-    refine ⟨?_, ?_⟩
-    · change 0 ≤ ((d : ℂ)⁻¹).re
-      rw [Complex.inv_re]
-      have hd_re : ((d : ℂ)).re = (d : ℝ) := Complex.natCast_re d
-      have hd_im : ((d : ℂ)).im = 0 := Complex.natCast_im d
-      rw [hd_re,
-          show Complex.normSq (d : ℂ) = (d : ℝ)^2 from by
-            rw [Complex.normSq_apply, hd_re, hd_im]; ring]
-      positivity
-    · symm
-      change ((d : ℂ)⁻¹).im = 0
-      rw [Complex.inv_im]
-      simp [Complex.natCast_im]
-  case hτ_unit =>
-    refine ⟨⟨τ, (d : ℂ) • (1 : L ℋ), ?_, ?_⟩, rfl⟩
-    · change τ * ((d : ℂ) • (1 : L ℋ)) = 1
-      rw [hτ_def, smul_mul_smul_comm, inv_mul_cancel₀ hd_ne_c, mul_one, one_smul]
-    · change ((d : ℂ) • (1 : L ℋ)) * τ = 1
-      rw [hτ_def, smul_mul_smul_comm, mul_inv_cancel₀ hd_ne_c, mul_one, one_smul]
-  case hτ_tr =>
-    rw [hτ_def, map_smul, smul_eq_mul, LinearMap.trace_one]
-    change ((d : ℂ))⁻¹ * (Module.finrank ℂ ℋ : ℂ) = 1
-    rw [show (Module.finrank ℂ ℋ : ℂ) = (d : ℂ) from by rw [hd_def]]
-    exact inv_mul_cancel₀ hd_ne_c
-  case hU =>
-    -- Extract a Kraus representation of E.
-    classical
-    have hE_cp : IsCompletelyPositive E.toLinearMap :=
-      ⟨E.toCompletelyPositiveMap, rfl⟩
-    let bℋ := Module.Free.chooseBasis ℂ ℋ
-    have hRankKraus : HasRankKraus bℋ (E.toLinearMap) :=
-      cp_to_rank_kraus bℋ E.toLinearMap hE_cp
-    obtain ⟨κ, hκ_dec, hκ_fin, hκ_card, A, hA_eq⟩ := hRankKraus
-    letI : DecidableEq κ := hκ_dec
-    letI : Fintype κ := hκ_fin
-    -- card κ = choiRank ≤ dim(L(ℋ ⊗ ℋ)) = d².
-    have hκ_card_le : Fintype.card κ ≤ d * d := by
-      rw [hκ_card]
-      unfold choiRank
-      refine (Submodule.finrank_le _).trans ?_
-      have h2 : Module.finrank ℂ (ℋ ⊗[ℂ] ℋ) = d * d := by
-        rw [Module.finrank_tensorProduct]
-      rw [h2]
-    -- Trace preservation gives Σ_a A_a* A_a = 1.
-    set S : L ℋ := ∑ a : κ, (LinearMap.adjoint (A a)).comp (A a) with hS_def
-    have hSρ_tr : ∀ ρ : L ℋ, Tr (S * ρ) = Tr ρ := by
-      intro ρ
-      have htr : Tr ρ = Tr (E.toLinearMap ρ) := E.trace_map ρ
-      have hKr : E.toLinearMap ρ =
-          ∑ a : κ, (A a).comp (ρ.comp (LinearMap.adjoint (A a))) := hA_eq ρ
-      have hcycle : ∀ a : κ,
-          Tr ((A a).comp (ρ.comp (LinearMap.adjoint (A a)))) =
-            Tr (((LinearMap.adjoint (A a)).comp (A a)) * ρ) := by
-        intro a
-        have h1 :
-            (A a).comp (ρ.comp (LinearMap.adjoint (A a))) =
-              (A a) * (ρ * (LinearMap.adjoint (A a))) := by
-          rfl
-        rw [h1]
-        rw [show (A a) * (ρ * (LinearMap.adjoint (A a))) =
-              (A a) * ρ * (LinearMap.adjoint (A a)) from by rw [mul_assoc],
-            trace_mul_comm ((A a) * ρ) (LinearMap.adjoint (A a))]
-        rw [show (LinearMap.adjoint (A a)) * ((A a) * ρ) =
-              ((LinearMap.adjoint (A a)).comp (A a)) * ρ from by
-          change (LinearMap.adjoint (A a)) * ((A a) * ρ) =
-            (LinearMap.adjoint (A a)) * (A a) * ρ
-          rw [mul_assoc]]
-      calc Tr (S * ρ)
-          = Tr ((∑ a : κ, (LinearMap.adjoint (A a)).comp (A a)) * ρ) := by rw [hS_def]
-        _ = ∑ a : κ, Tr (((LinearMap.adjoint (A a)).comp (A a)) * ρ) := by
-            rw [Finset.sum_mul]; exact map_sum Tr _ _
-        _ = ∑ a : κ, Tr ((A a).comp (ρ.comp (LinearMap.adjoint (A a)))) := by
-            refine Finset.sum_congr rfl ?_
-            intro a _; rw [(hcycle a).symm]
-        _ = Tr (∑ a : κ, (A a).comp (ρ.comp (LinearMap.adjoint (A a)))) := by
-            rw [map_sum Tr]
-        _ = Tr (E.toLinearMap ρ) := by rw [← hKr]
-        _ = Tr ρ := htr.symm
-    -- From `Tr (S * ρ) = Tr ρ` for all ρ, conclude `S = 1`.
-    have hSumAA : S = (1 : L ℋ) := by
-      apply LinearMap.ext
-      intro v
-      refine ext_inner_left ℂ ?_
-      intro w
-      have h_compOuter : ∀ M : L ℋ, M.comp (outer_product w v) = outer_product w (M v) := by
-        intro M
-        ext x
-        simp [outer_product_eq_rankOne]
-      have htrace_eq : Tr (S * (outer_product w v)) = Tr (outer_product w v) :=
-        hSρ_tr (outer_product w v)
-      have hLHS : Tr (S * (outer_product w v)) = inner ℂ w (S v) := by
-        change Tr (S.comp (outer_product w v)) = inner ℂ w (S v)
-        rw [h_compOuter S, trace_outer_product]
-      have hRHS : Tr (outer_product w v) = inner ℂ w v := trace_outer_product w v
-      have h1v : (1 : L ℋ) v = v := rfl
-      rw [h1v]
-      rw [← hLHS, htrace_eq, hRHS]
-    -- Discharge the unitary-construction step via `kraus_to_unitary_dilation_aux`.
-    obtain ⟨U, hU⟩ := kraus_to_unitary_dilation_aux (ℋ := ℋ) A hSumAA hκ_card_le
-    refine ⟨U, ?_⟩
-    intro γ
-    have hKraus : E.toFun γ =
-        ∑ a : κ, (A a).comp (γ.comp (LinearMap.adjoint (A a))) := hA_eq γ
-    rw [hKraus, hU γ]
+          E.toFun γ = TrRight ((V.comp γ).comp (LinearMap.adjoint V)) := by
+  classical
+  -- Extract a Kraus representation of E.
+  have hE_cp : IsCompletelyPositive E.toLinearMap :=
+    ⟨E.toCompletelyPositiveMap, rfl⟩
+  let bℋ := Module.Free.chooseBasis ℂ ℋ
+  have hKraus : HasKraus (E.toLinearMap) :=
+    cp_to_kraus bℋ E.toLinearMap hE_cp
+  obtain ⟨κ, hκ_dec, hκ_fin, A, hA_eq⟩ := hKraus
+  letI : DecidableEq κ := hκ_dec
+  letI : Fintype κ := hκ_fin
+  -- Trace preservation gives Σ_a A_a* A_a = 1 (same derivation as before).
+  set S : L ℋ := ∑ a : κ, (LinearMap.adjoint (A a)).comp (A a) with hS_def
+  have hSρ_tr : ∀ ρ : L ℋ, Tr (S * ρ) = Tr ρ := by
+    intro ρ
+    have htr : Tr ρ = Tr (E.toLinearMap ρ) := E.trace_map ρ
+    have hKr : E.toLinearMap ρ =
+        ∑ a : κ, (A a).comp (ρ.comp (LinearMap.adjoint (A a))) := hA_eq ρ
+    have hcycle : ∀ a : κ,
+        Tr ((A a).comp (ρ.comp (LinearMap.adjoint (A a)))) =
+          Tr (((LinearMap.adjoint (A a)).comp (A a)) * ρ) := by
+      intro a
+      -- Cyclicity across the mixed spaces `ℋ → 𝒦`:
+      -- `Tr_𝒦 (Aₐ ∘ ρ ∘ Aₐ*) = Tr_ℋ ((ρ ∘ Aₐ*) ∘ Aₐ) = Tr_ℋ (ρ ∘ (Aₐ* ∘ Aₐ))`.
+      rw [← LinearMap.trace_comp_comm' (A a) (ρ.comp (LinearMap.adjoint (A a))),
+          LinearMap.comp_assoc, Module.End.mul_eq_comp]
+      -- Now `Tr (ρ ∘ (Aₐ* ∘ Aₐ)) = Tr ((Aₐ* ∘ Aₐ) ∘ ρ)`, a cyclic swap within `L ℋ`.
+      exact (LinearMap.trace_comp_comm' ρ ((LinearMap.adjoint (A a)).comp (A a))).symm
+    calc Tr (S * ρ)
+        = Tr ((∑ a : κ, (LinearMap.adjoint (A a)).comp (A a)) * ρ) := by rw [hS_def]
+      _ = ∑ a : κ, Tr (((LinearMap.adjoint (A a)).comp (A a)) * ρ) := by
+          rw [Finset.sum_mul]; exact map_sum Tr _ _
+      _ = ∑ a : κ, Tr ((A a).comp (ρ.comp (LinearMap.adjoint (A a)))) := by
+          refine Finset.sum_congr rfl ?_
+          intro a _; rw [(hcycle a).symm]
+      _ = Tr (∑ a : κ, (A a).comp (ρ.comp (LinearMap.adjoint (A a)))) := by
+          rw [map_sum Tr]
+      _ = Tr (E.toLinearMap ρ) := by rw [← hKr]
+      _ = Tr ρ := htr.symm
+  have hSumAA : S = (1 : L ℋ) := by
+    apply LinearMap.ext
+    intro v
+    refine ext_inner_left ℂ ?_
+    intro w
+    have h_compOuter : ∀ M : L ℋ, M.comp (outer_product w v) = outer_product w (M v) := by
+      intro M
+      ext x
+      simp [outer_product_eq_rankOne]
+    have htrace_eq : Tr (S * (outer_product w v)) = Tr (outer_product w v) :=
+      hSρ_tr (outer_product w v)
+    have hLHS : Tr (S * (outer_product w v)) = inner ℂ w (S v) := by
+      change Tr (S.comp (outer_product w v)) = inner ℂ w (S v)
+      rw [h_compOuter S, trace_outer_product]
+    have hRHS : Tr (outer_product w v) = inner ℂ w v := trace_outer_product w v
+    have h1v : (1 : L ℋ) v = v := rfl
+    rw [h1v]
+    rw [← hLHS, htrace_eq, hRHS]
+  -- The environment is `EuclideanSpace ℂ κ`. We need it `Nontrivial`, which is
+  -- equivalent to `κ` being nonempty. The hypothesis `Σ A_a* A_a = 1 ≠ 0`
+  -- (since `ℋ` is nontrivial, so `1 ≠ 0`) forces `κ` to be nonempty.
+  have hκ_nonempty : Nonempty κ := by
+    by_contra h
+    rw [not_nonempty_iff] at h
+    have hS_zero : S = 0 := by
+      simp [hS_def, Finset.sum_empty]
+    have h1ne : (1 : L ℋ) ≠ 0 := one_ne_zero
+    apply h1ne
+    rw [← hSumAA, hS_zero]
+  haveI : Nonempty κ := hκ_nonempty
+  haveI : Nontrivial (EuclideanSpace ℂ κ) :=
+    Module.nontrivial_of_finrank_pos
+      (by
+        rw [finrank_euclideanSpace]
+        exact Fintype.card_pos)
+  -- Pure-state Stinespring isometry from the Kraus family.
+  obtain ⟨V, hV_iso, hV_eq⟩ :=
+    kraus_to_pure_stinespring_isometry (ℋ := ℋ) A hSumAA
+  refine ⟨EuclideanSpace ℂ κ, inferInstance, inferInstance, V, hV_iso, ?_⟩
+  intro γ
+  have hKraus_γ : E.toFun γ =
+      ∑ a : κ, (A a).comp (γ.comp (LinearMap.adjoint (A a))) := hA_eq γ
+  rw [hKraus_γ, hV_eq γ]
 
 omit [Nontrivial ℋ] in
 /-- For any positive-definite operator `τ` and any nonzero exponent `α`,

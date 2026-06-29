@@ -616,6 +616,148 @@ theorem twirl_eq_partialTrace_smul_id (X : L (ℋ₁ ⊗[ℂ] ℋ₂)) :
       map_add_right]
     exact congr_arg₂ (· + ·) hY₁ hY₂
 
+/-! ### Right-factor twirl (mirror of `twirl_eq_partialTrace_smul_id`) -/
+
+omit [Nontrivial ℋ₁] [Nontrivial ℋ₂] in
+/-- `conjugateEnd` by the tensor swap turns `T A B` into `T B A`. -/
+private lemma conjugateEnd_comm_map (A : L ℋ₁) (B : L ℋ₂) :
+    (conjugateEnd (TensorProduct.comm ℂ ℋ₁ ℋ₂))
+        (TensorProduct.map A B : L (ℋ₁ ⊗[ℂ] ℋ₂)) =
+      (TensorProduct.map B A : L (ℋ₂ ⊗[ℂ] ℋ₁)) := by
+  apply TensorProduct.ext'
+  intro y x
+  change (TensorProduct.comm ℂ ℋ₁ ℋ₂).toLinearMap
+        ((TensorProduct.map A B) ((TensorProduct.comm ℂ ℋ₁ ℋ₂).symm.toLinearMap (y ⊗ₜ[ℂ] x))) =
+       (TensorProduct.map B A) (y ⊗ₜ[ℂ] x)
+  simp [TensorProduct.map_tmul]
+
+omit [Nontrivial ℋ₁] [Nontrivial ℋ₂] in
+/-- Partial trace formula for `TrRight` applied to a tensor product:
+    `TrRight (T A B) = (Tr B) • A`. -/
+private lemma TrRight_map (A : L ℋ₁) (B : L ℋ₂) :
+    QuantumChannel.TrRight (TensorProduct.map A B : L (ℋ₁ ⊗[ℂ] ℋ₂)) =
+    LinearMap.trace ℂ ℋ₂ B • A := by
+  -- TrRight = Tr₂ ∘ conjugateEnd (TensorProduct.comm ℂ ℋ₁ ℋ₂)
+  unfold QuantumChannel.TrRight
+  simp only [LinearMap.comp_apply]
+  rw [conjugateEnd_comm_map A B]
+  exact Tr₂_map B A
+
+omit [Nontrivial ℋ₁] [Nontrivial ℋ₂] in
+/-- Right-additivity for `TensorProduct.map` in the second argument (already exists
+    as `map_add_right`). This is the analog for the first argument. -/
+private lemma map_add_left (f₁ f₂ : L ℋ₁) (g : L ℋ₂) :
+    TensorProduct.map (f₁ + f₂) g =
+    TensorProduct.map f₁ g + TensorProduct.map f₂ g := by
+  simp only [map_eq_rTensor_mul_lTensor, map_add (rTensorStarAlgHom (ℋ₂ := ℋ₂)), add_mul]
+
+omit [Nontrivial ℋ₁] [Nontrivial ℋ₂] in
+/-- Tensor-product conjugation on the right factor is continuous. -/
+lemma continuous_unitaryConj_tensor_right (X : L (ℋ₁ ⊗[ℂ] ℋ₂)) :
+    Continuous (fun u : unitary (L ℋ₂) =>
+      TensorProduct.map (LinearMap.id (M := ℋ₁)) ((u : L ℋ₂)) * X *
+      TensorProduct.map (LinearMap.id (M := ℋ₁)) (star (u : L ℋ₂))) := by
+  have h_id_eq : ∀ g : L ℋ₂,
+      TensorProduct.map (LinearMap.id (M := ℋ₁)) g = (lTensorStarAlgHom (ℋ₁ := ℋ₁)) g := by
+    intro g
+    rw [show (LinearMap.id : L ℋ₁) = 1 from rfl,
+        map_eq_rTensor_mul_lTensor, map_one (rTensorStarAlgHom (ℋ₂ := ℋ₂)), one_mul]
+  simp_rw [h_id_eq]
+  exact (((continuous_lTensorStarAlgHom (ℋ₁ := ℋ₁) (ℋ₂ := ℋ₂)).comp
+    continuous_subtype_val).mul continuous_const).mul
+    ((continuous_lTensorStarAlgHom (ℋ₁ := ℋ₁) (ℋ₂ := ℋ₂)).comp
+      (continuous_star.comp continuous_subtype_val))
+
+omit [Nontrivial ℋ₁] in
+/-- Tensor-product conjugation on the right factor is integrable. -/
+lemma integrable_unitaryConj_tensor_right (X : L (ℋ₁ ⊗[ℂ] ℋ₂)) :
+    Integrable (fun u : unitary (L ℋ₂) =>
+      TensorProduct.map (LinearMap.id (M := ℋ₁)) ((u : L ℋ₂)) * X *
+      TensorProduct.map (LinearMap.id (M := ℋ₁)) (star (u : L ℋ₂)))
+      (haarUnitary ℋ₂) :=
+  (continuous_unitaryConj_tensor_right X).integrable_of_hasCompactSupport
+    (IsCompact.of_isClosed_subset isCompact_univ (isClosed_tsupport _) (Set.subset_univ _))
+
+omit [Nontrivial ℋ₁] in
+/-- **Right-factor twirl identity** (mirror of `twirl_eq_partialTrace_smul_id`).
+
+    ∫ (1⊗u) X (1⊗u*) du = TrRight(X) ⊗ dim(ℋ₂)⁻¹ • id_{ℋ₂}
+
+    where the integral is over normalized Haar measure on `unitary (L ℋ₂)`. -/
+theorem twirl_eq_partialTrace_right_smul_id (X : L (ℋ₁ ⊗[ℂ] ℋ₂)) :
+    ∫ u : unitary (L ℋ₂),
+      TensorProduct.map (LinearMap.id (M := ℋ₁)) ((u : L ℋ₂)) * X *
+      TensorProduct.map (LinearMap.id (M := ℋ₁)) (star (u : L ℋ₂))
+    ∂(haarUnitary ℋ₂) =
+    TensorProduct.map (QuantumChannel.TrRight X)
+      ((Module.finrank ℂ ℋ₂ : ℂ)⁻¹ • LinearMap.id (M := ℋ₂)) := by
+  suffices h : ∀ Y : L ℋ₁ ⊗[ℂ] L ℋ₂,
+      ∫ u : unitary (L ℋ₂),
+        TensorProduct.map (LinearMap.id (M := ℋ₁)) ((u : L ℋ₂)) *
+        l_tensor_equiv.symm Y *
+        TensorProduct.map (LinearMap.id (M := ℋ₁)) (star (u : L ℋ₂))
+      ∂(haarUnitary ℋ₂) =
+      TensorProduct.map
+        (QuantumChannel.TrRight (l_tensor_equiv.symm Y))
+        ((Module.finrank ℂ ℋ₂ : ℂ)⁻¹ • LinearMap.id (M := ℋ₂)) by
+    have := h (l_tensor_equiv X)
+    simp only [LinearEquiv.symm_apply_apply] at this
+    exact this
+  intro Y
+  induction Y using TensorProduct.induction_on with
+  | zero =>
+    simp only [map_zero, mul_zero, zero_mul, integral_zero]
+    symm; exact TensorProduct.ext' fun v₁ v₂ => by simp
+  | tmul A B =>
+    rw [l_tensor_equiv_symm_tmul, TrRight_map]
+    have h_simp : ∀ u : unitary (L ℋ₂),
+        TensorProduct.map (LinearMap.id (M := ℋ₁)) ((u : L ℋ₂)) *
+        TensorProduct.map A B *
+        TensorProduct.map (LinearMap.id (M := ℋ₁)) (star (u : L ℋ₂)) =
+        TensorProduct.map A ((u : L ℋ₂) * B * star (u : L ℋ₂)) := fun u =>
+      TensorProduct.ext' fun v₁ v₂ => by simp [TensorProduct.map_tmul]
+    simp_rw [h_simp]
+    -- Goal: ∫ map A (u*B*star u) du = map (Tr B • A) (dim⁻¹ • id)
+    let mapA_lm : L ℋ₂ →ₗ[ℂ] L (ℋ₁ ⊗[ℂ] ℋ₂) :=
+      { toFun := fun g => TensorProduct.map A g
+        map_add' := fun g h => map_add_right A g h
+        map_smul' := fun c g => by
+          simp only [RingHom.id_apply, map_eq_rTensor_mul_lTensor,
+            map_smul (lTensorStarAlgHom (ℋ₁ := ℋ₁)), mul_smul_comm] }
+    let mapA : L ℋ₂ →L[ℂ] L (ℋ₁ ⊗[ℂ] ℋ₂) := ⟨mapA_lm, map_continuous mapA_lm⟩
+    calc ∫ u : unitary (L ℋ₂),
+            TensorProduct.map A ((u : L ℋ₂) * B * star (u : L ℋ₂))
+            ∂(haarUnitary ℋ₂)
+        = mapA (∫ u : unitary (L ℋ₂),
+            (u : L ℋ₂) * B * star (u : L ℋ₂) ∂(haarUnitary ℋ₂)) :=
+          mapA.integral_comp_comm (integrable_unitaryConj B)
+      _ = TensorProduct.map
+            (LinearMap.trace ℂ ℋ₂ B • A)
+            ((Module.finrank ℂ ℋ₂ : ℂ)⁻¹ • LinearMap.id (M := ℋ₂)) := by
+          rw [twirl_eq_smul_one B]
+          change TensorProduct.map A
+            (((Module.finrank ℂ ℋ₂ : ℂ)⁻¹ * LinearMap.trace ℂ ℋ₂ B) • (1 : L ℋ₂)) =
+            TensorProduct.map (LinearMap.trace ℂ ℋ₂ B • A)
+              ((Module.finrank ℂ ℋ₂ : ℂ)⁻¹ • (1 : L ℋ₂))
+          rw [map_eq_rTensor_mul_lTensor
+                A (((Module.finrank ℂ ℋ₂ : ℂ)⁻¹ * LinearMap.trace ℂ ℋ₂ B) • (1 : L ℋ₂)),
+              map_eq_rTensor_mul_lTensor
+                (LinearMap.trace ℂ ℋ₂ B • A)
+                ((Module.finrank ℂ ℋ₂ : ℂ)⁻¹ • (1 : L ℋ₂))]
+          simp only [map_smul, map_one, mul_smul_comm, mul_one, smul_smul]
+  | add Y₁ Y₂ hY₁ hY₂ =>
+    rw [show (l_tensor_equiv (ℋ₁ := ℋ₁) (ℋ₂ := ℋ₂)).symm (Y₁ + Y₂) =
+        l_tensor_equiv.symm Y₁ + l_tensor_equiv.symm Y₂ from map_add _ _ _]
+    simp only [mul_add, add_mul]
+    rw [integral_add
+      (integrable_unitaryConj_tensor_right (l_tensor_equiv.symm Y₁))
+      (integrable_unitaryConj_tensor_right (l_tensor_equiv.symm Y₂)),
+      show QuantumChannel.TrRight (l_tensor_equiv.symm Y₁ + l_tensor_equiv.symm Y₂) =
+        QuantumChannel.TrRight (l_tensor_equiv.symm Y₁) +
+        QuantumChannel.TrRight (l_tensor_equiv.symm Y₂) from map_add _ _ _,
+      map_add_left]
+    exact congr_arg₂ (· + ·) hY₁ hY₂
+
 end Twirl
 
 /-! ## Section 4: Jensen inequality for jointly convex/concave operator functions -/
