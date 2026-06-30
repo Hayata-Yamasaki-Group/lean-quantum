@@ -24,8 +24,7 @@ It is the companion of the `α = ∞` (max-relative entropy) case, proven in
 ## Status
 
 The whole `α = 1` programme (following Müller-Lennert et al., arXiv:1306.3142) is
-**fully proven, sorry-free**. This module is not wired into the `Quantum.lean` build
-root only to keep its extra imports (interval integrals, etc.) out of the core.
+**fully proven, sorry-free**.
 
 * `umegakiNorm`, `umegakiRelEntropyNN` — explicit definitions.
 * `hasDerivAt_sandwichedQuasi_re_one` — the derivative of
