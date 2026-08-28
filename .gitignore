@@ -22,7 +22,6 @@ blueprint/lean_decls
 *.blg
 *.log
 *.out
-*.pdf
 *.fls
 *.fdb_latexmk
 *.synctex.gz
