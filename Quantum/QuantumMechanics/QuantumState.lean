@@ -1,27 +1,27 @@
 /-
 Copyright (c) 2025 Hayata Yamasaki. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors:
+Authors: Hayata Yamasaki
 -/
 
-import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-import Mathlib.LinearAlgebra.Trace
 import Mathlib.Analysis.CStarAlgebra.CompletelyPositiveMap
 import Mathlib.Analysis.InnerProductSpace.StarOrder
+import Quantum.QuantumMechanics.OperatorNotation
 
 namespace QuantumState
 
 universe u v
 
 -- Qudit
+/--
+Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press, 2018),
+chapter-level reference (no numbered correspondence).
+-/
 class Qudit (a : Type u) extends
   NormedAddCommGroup a,
   InnerProductSpace ℂ a,
   CompleteSpace a,
   FiniteDimensional ℂ a
-
-abbrev L (ℋ : Type u) [AddCommGroup ℋ] [Module ℂ ℋ] : Type u :=
-  ℋ →ₗ[ℂ] ℋ
 
 -- Identity operator
 abbrev I (ℋ : Type u) [AddCommGroup ℋ] [Module ℂ ℋ] : L ℋ :=

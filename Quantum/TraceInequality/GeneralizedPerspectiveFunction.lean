@@ -1,11 +1,18 @@
 /-
 Copyright (c) 2025 Hayata Yamasaki. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors:
+Authors: Hayata Yamasaki
 -/
 
 import Quantum.TraceInequality.JensenOperatorInequality
-import Quantum.TraceInequality.LownerHeinzTheorem
+
+/-!
+# Generalized operator perspectives
+
+The generalized perspective combines continuous functional calculus with conjugation
+by a positive square root. This module establishes its joint convexity and concavity
+on the positive cones under the corresponding hypotheses on the scalar functions.
+-/
 
 namespace GeneralizedPerspectiveFunction
 
@@ -54,11 +61,11 @@ variable [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ] [CompleteSpace ℋ
 variable [Nontrivial ℋ]
 
 /-- The operator `h(B)^(1/2)` defined by real continuous functional calculus. -/
-noncomputable def hSqrt (h : ℝ → ℝ) (B : L ℋ) : L ℋ :=
+noncomputable def hSqrt (h : ℝ → ℝ) (B : QuantumState.B ℋ) : QuantumState.B ℋ :=
   cfcR (fun x : ℝ ↦ (h x) ^ ((1 : ℝ) / 2)) B
 
 /-- The operator `h(B)^(-1/2)` defined by real continuous functional calculus. -/
-noncomputable def hInvSqrt (h : ℝ → ℝ) (B : L ℋ) : L ℋ :=
+noncomputable def hInvSqrt (h : ℝ → ℝ) (B : QuantumState.B ℋ) : QuantumState.B ℋ :=
   cfcR (fun x : ℝ ↦ (h x) ^ ((-1 : ℝ) / 2)) B
 
 /--
@@ -66,12 +73,17 @@ The generalized perspective function
 `(fΔh)(A, B) = h(B)^(1/2) f(h(B)^(-1/2) A h(B)^(-1/2)) h(B)^(1/2)`.
 
 This definition is intended to be used when `A` is Hermitian and `h(B)` is positive/invertible.
+
+Source: A. Ebadian, I. Nikoufar, M. Eshaghi Gordji, "Perspectives of matrix convex functions",
+PNAS 108(18) (2011), 7313--7314, Page 1, DOI 10.1073/pnas.1102518108. Defined everywhere via CFC;
+positivity and invertibility are assumed in subsequent theorems.
 -/
-noncomputable def GeneralizedPerspective (f h : ℝ → ℝ) (A B : L ℋ) : L ℋ :=
+noncomputable def generalizedPerspective (f h : ℝ → ℝ) (A B : QuantumState.B ℋ)
+    : QuantumState.B ℋ :=
   hSqrt h B * cfcR f (hInvSqrt h B * A * hInvSqrt h B) * hSqrt h B
 
-/-- Infix notation for generalized perspective: `(f Δ h) A B = GeneralizedPerspective f h A B`. -/
-scoped infixl:70 " Δ " => GeneralizedPerspective
+/-- Infix notation for generalized perspective: `(f Δ h) A B = generalizedPerspective f h A B`. -/
+scoped infixl:70 " Δ " => generalizedPerspective
 
 end Definition
 
@@ -82,74 +94,33 @@ variable [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ] [CompleteSpace ℋ
 variable [Nontrivial ℋ]
 
 /-- Positive semidefinite operators. -/
-def psdSet : Set (L ℋ) :=
+def psdSet : Set (QuantumState.B ℋ) :=
   {A | IsSelfAdjoint A ∧ spectrum ℝ A ⊆ Set.Ici (0 : ℝ)}
 
 /-- Strictly positive operators. -/
-def pdSet : Set (L ℋ) :=
+def pdSet : Set (QuantumState.B ℋ) :=
   {A | IsSelfAdjoint A ∧ spectrum ℝ A ⊆ Set.Ioi (0 : ℝ)}
 
-private lemma spectrum_convexCombo_Ioi {A B : L ℋ} {t : ℝ}
-    (hA : IsSelfAdjoint A) (hB : IsSelfAdjoint B) (ht0 : 0 ≤ t) (ht1 : t ≤ 1)
-    (As : spectrum ℝ A ⊆ Set.Ioi (0 : ℝ)) (Bs : spectrum ℝ B ⊆ Set.Ioi (0 : ℝ)) :
-    spectrum ℝ ((1 - t) • A + t • B) ⊆ Set.Ioi (0 : ℝ) := by
-  set C : L ℋ := (1 - t) • A + t • B
-  have hC : IsSelfAdjoint C := by
-    simpa [C] using (IsSelfAdjoint.all (1 - t)).smul hA |>.add ((IsSelfAdjoint.all t).smul hB)
-  have hApos : ∃ r > 0, algebraMap ℝ (L ℋ) r ≤ A := by
-    refine (CFC.exists_pos_algebraMap_le_iff (A := L ℋ) (a := A) (ha := hA)).2 ?_
-    intro x hx
-    exact As hx
-  have hBpos : ∃ r > 0, algebraMap ℝ (L ℋ) r ≤ B := by
-    refine (CFC.exists_pos_algebraMap_le_iff (A := L ℋ) (a := B) (ha := hB)).2 ?_
-    intro x hx
-    exact Bs hx
-  rcases hApos with ⟨rA, hrA, hrA_le⟩
-  rcases hBpos with ⟨rB, hrB, hrB_le⟩
-  set rC : ℝ := (1 - t) * rA + t * rB
-  have hrC : 0 < rC := by
-    by_cases h1t : (1 - t) = 0
-    · have ht' : t = 1 := by linarith
-      subst ht'
-      simpa [rC] using hrB
-    · have h1t_pos : 0 < 1 - t := lt_of_le_of_ne (sub_nonneg.mpr ht1) (Ne.symm h1t)
-      simpa [rC] using
-        add_pos_of_pos_of_nonneg (mul_pos h1t_pos hrA) (mul_nonneg ht0 (le_of_lt hrB))
-  have hrC_le : algebraMap ℝ (L ℋ) rC ≤ C := by
-    have hsum :
-        (1 - t) • algebraMap ℝ (L ℋ) rA + t • algebraMap ℝ (L ℋ) rB ≤ C := by
-      simpa [C] using
-        add_le_add (smul_le_smul_of_nonneg_left hrA_le (sub_nonneg.mpr ht1))
-          (smul_le_smul_of_nonneg_left hrB_le ht0)
-    have hLHS :
-        (1 - t) • algebraMap ℝ (L ℋ) rA + t • algebraMap ℝ (L ℋ) rB =
-          algebraMap ℝ (L ℋ) rC := by
-      simp [rC, Algebra.smul_def]
-    simpa [hLHS] using hsum
-  intro x hx
-  simpa [C] using
-    (CFC.exists_pos_algebraMap_le_iff (A := L ℋ) (a := C) (ha := hC)).1 ⟨rC, hrC, hrC_le⟩ x hx
-
 omit [Nontrivial ℋ] in
-private lemma cfcR_sq_eq {g k : ℝ → ℝ} {A : L ℋ}
+private lemma cfcR_sq_eq {g k : ℝ → ℝ} {A : (ℋ →L[ℂ] ℋ)}
     (hA : IsSelfAdjoint A)
     (hg : ContinuousOn g (spectrum ℝ A))
     (hk : ContinuousOn k (spectrum ℝ A))
     (hmul : ∀ x ∈ spectrum ℝ A, g x * k x = 1) :
-    cfcR (ℋ := ℋ) g A * cfcR (ℋ := ℋ) k A = (1 : L ℋ) := by
-  rw [← cfc_mul (R := ℝ) (A := L ℋ) (p := IsSelfAdjoint)
+    cfcR (ℋ := ℋ) g A * cfcR (ℋ := ℋ) k A = (1 : (ℋ →L[ℂ] ℋ)) := by
+  rw [← cfc_mul (R := ℝ) (A := (ℋ →L[ℂ] ℋ)) (p := IsSelfAdjoint)
       (f := g) (g := k) (a := A) hg hk, ← cfc_const_one ℝ A]
   apply cfc_congr
   intro x hx
   simpa using hmul x hx
 
 omit [Nontrivial ℋ] in
-private lemma cfcR_mul_eq {g k m : ℝ → ℝ} {A : L ℋ}
+private lemma cfcR_mul_eq {g k m : ℝ → ℝ} {A : (ℋ →L[ℂ] ℋ)}
     (hg : ContinuousOn g (spectrum ℝ A))
     (hk : ContinuousOn k (spectrum ℝ A))
     (hmul : ∀ x ∈ spectrum ℝ A, g x * k x = m x) :
     cfcR (ℋ := ℋ) g A * cfcR (ℋ := ℋ) k A = cfcR (ℋ := ℋ) m A := by
-  rw [← cfc_mul (R := ℝ) (A := L ℋ) (p := IsSelfAdjoint)
+  rw [← cfc_mul (R := ℝ) (A := (ℋ →L[ℂ] ℋ)) (p := IsSelfAdjoint)
       (f := g) (g := k) (a := A) hg hk]
   apply cfc_congr
   intro x hx
@@ -168,24 +139,24 @@ private lemma hpow_continuousOn
     exact hpos y hy)
 
 omit [Nontrivial ℋ] in
-private lemma hSqrt_selfAdjoint (h : ℝ → ℝ) (B : L ℋ) :
+private lemma hSqrt_selfAdjoint (h : ℝ → ℝ) (B : (ℋ →L[ℂ] ℋ)) :
     IsSelfAdjoint (hSqrt (ℋ := ℋ) h B) := by
   dsimp [hSqrt, cfcR]
   exact cfc_predicate _ _
 
 omit [Nontrivial ℋ] in
-private lemma hInvSqrt_selfAdjoint (h : ℝ → ℝ) (B : L ℋ) :
+private lemma hInvSqrt_selfAdjoint (h : ℝ → ℝ) (B : (ℋ →L[ℂ] ℋ)) :
     IsSelfAdjoint (hInvSqrt (ℋ := ℋ) h B) := by
   dsimp [hInvSqrt, cfcR]
   exact cfc_predicate _ _
 
 omit [Nontrivial ℋ] in
 private lemma hSqrt_mul_hInvSqrt_eq_one
-    {h : ℝ → ℝ} {B : L ℋ}
+    {h : ℝ → ℝ} {B : (ℋ →L[ℂ] ℋ)}
     (hB : IsSelfAdjoint B) (Bs : spectrum ℝ B ⊆ Set.Ioi (0 : ℝ))
     (hcont : ContinuousOn h (Set.Ioi (0 : ℝ)))
     (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
-    hSqrt (ℋ := ℋ) h B * hInvSqrt (ℋ := ℋ) h B = (1 : L ℋ) := by
+    hSqrt (ℋ := ℋ) h B * hInvSqrt (ℋ := ℋ) h B = (1 : (ℋ →L[ℂ] ℋ)) := by
   have hsqrt :
       ContinuousOn (fun x : ℝ ↦ (h x) ^ ((1 : ℝ) / 2)) (spectrum ℝ B) :=
     (hpow_continuousOn h ((1 : ℝ) / 2) hcont hpos).mono (by intro x hx; exact Bs hx)
@@ -203,11 +174,11 @@ private lemma hSqrt_mul_hInvSqrt_eq_one
 
 omit [Nontrivial ℋ] in
 private lemma hInvSqrt_mul_hSqrt_eq_one
-    {h : ℝ → ℝ} {B : L ℋ}
+    {h : ℝ → ℝ} {B : (ℋ →L[ℂ] ℋ)}
     (hB : IsSelfAdjoint B) (Bs : spectrum ℝ B ⊆ Set.Ioi (0 : ℝ))
     (hcont : ContinuousOn h (Set.Ioi (0 : ℝ)))
     (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
-    hInvSqrt (ℋ := ℋ) h B * hSqrt (ℋ := ℋ) h B = (1 : L ℋ) := by
+    hInvSqrt (ℋ := ℋ) h B * hSqrt (ℋ := ℋ) h B = (1 : (ℋ →L[ℂ] ℋ)) := by
   have hsqrt :
       ContinuousOn (fun x : ℝ ↦ (h x) ^ ((1 : ℝ) / 2)) (spectrum ℝ B) :=
     (hpow_continuousOn h ((1 : ℝ) / 2) hcont hpos).mono (by intro x hx; exact Bs hx)
@@ -225,7 +196,7 @@ private lemma hInvSqrt_mul_hSqrt_eq_one
 
 omit [Nontrivial ℋ] in
 private lemma hSqrt_mul_hSqrt_eq
-    {h : ℝ → ℝ} {B : L ℋ}
+    {h : ℝ → ℝ} {B : (ℋ →L[ℂ] ℋ)}
     (Bs : spectrum ℝ B ⊆ Set.Ioi (0 : ℝ))
     (hcont : ContinuousOn h (Set.Ioi (0 : ℝ)))
     (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
@@ -243,7 +214,7 @@ private lemma hSqrt_mul_hSqrt_eq
   simpa [hSqrt] using cfcR_mul_eq (ℋ := ℋ) (A := B) hsqrt hsqrt hmul
 
 omit [Nontrivial ℋ] in
-private lemma conj_le_conj {X Y T : L ℋ} (hXY : X ≤ Y) (hT : IsSelfAdjoint T) :
+private lemma conj_le_conj {X Y T : (ℋ →L[ℂ] ℋ)} (hXY : X ≤ Y) (hT : IsSelfAdjoint T) :
     T * X * T ≤ T * Y * T := by
   have hnonneg : 0 ≤ Y - X := sub_nonneg.mpr hXY
   have hconj : 0 ≤ T * (Y - X) * T := by
@@ -252,11 +223,23 @@ private lemma conj_le_conj {X Y T : L ℋ} (hXY : X ≤ Y) (hT : IsSelfAdjoint T
     simp [sub_eq_add_neg, mul_add, add_mul, mul_assoc]
   exact sub_nonneg.mp (by simpa [hsub] using hconj)
 
-set_option maxHeartbeats 800000 in
--- The generalized-perspective normalization expands several nested CFC products.
-private theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
+section CondVCore
+-- The normalization proof below expands several nested CFC products, and every tactic
+-- step re-derives the real-scalar structure of `L ℋ` (obtained from the complex one by
+-- restriction of scalars) from scratch: the searches for derived classes such as
+-- `NonnegSpectrumClass ℝ (ℋ →L[ℂ] ℋ)`, `StarModule ℝ (ℋ →L[ℂ] ℋ)`,
+-- `PosSMulMono ℝ (ℋ →L[ℂ] ℋ)` all
+-- repeatedly re-solve the `Module ℝ (ℋ →L[ℂ] ℋ)` / `Algebra ℝ (ℋ →L[ℂ] ℋ)`
+-- subgoals, which are not
+-- cached across tactic steps and cost hundreds of milliseconds per occurrence.  Caching
+-- the two root instances at section level keeps the declaration within the default
+-- heartbeat budget.
+noncomputable local instance : Module ℝ (ℋ →L[ℂ] ℋ) := inferInstance
+noncomputable local instance : Algebra ℝ (ℋ →L[ℂ] ℋ) := inferInstance
+
+private theorem jointlyConvexOn_generalizedPerspective_psdSet_pdSet_of_jensenColumn
     {f h : ℝ → ℝ}
-    (hcoreV : CondV (ℋ := ℋ) f)
+    (hcoreV : JensenContractiveColumnCondition (ℋ := ℋ) f)
     (hconc : OperatorConcaveOn (ℋ := ℋ) (Set.Ioi (0 : ℝ)) h)
     (hcont : ContinuousOn h (Set.Ioi (0 : ℝ)))
     (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
@@ -266,13 +249,13 @@ private theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
   rcases hA₂ with ⟨hA₂_sa, hA₂_spec⟩
   rcases hB₁ with ⟨hB₁_sa, hB₁_spec⟩
   rcases hB₂ with ⟨hB₂_sa, hB₂_spec⟩
-  let A : L ℋ := (1 - θ) • A₁ + θ • A₂
-  let B : L ℋ := (1 - θ) • B₁ + θ • B₂
-  have hA₁_nonneg : (0 : L ℋ) ≤ A₁ := by
+  let A : (ℋ →L[ℂ] ℋ) := (1 - θ) • A₁ + θ • A₂
+  let B : (ℋ →L[ℂ] ℋ) := (1 - θ) • B₁ + θ • B₂
+  have hA₁_nonneg : (0 : (ℋ →L[ℂ] ℋ)) ≤ A₁ := by
     refine (StarOrderedRing.nonneg_iff_spectrum_nonneg (R := ℝ) A₁ (ha := hA₁_sa)).2 ?_
     intro x hx
     simpa [Set.Ici] using hA₁_spec hx
-  have hA₂_nonneg : (0 : L ℋ) ≤ A₂ := by
+  have hA₂_nonneg : (0 : (ℋ →L[ℂ] ℋ)) ≤ A₂ := by
     refine (StarOrderedRing.nonneg_iff_spectrum_nonneg (R := ℝ) A₂ (ha := hA₂_sa)).2 ?_
     intro x hx
     simpa [Set.Ici] using hA₂_spec hx
@@ -280,7 +263,8 @@ private theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
     dsimp [B]
     simpa using (IsSelfAdjoint.all (1 - θ)).smul hB₁_sa |>.add ((IsSelfAdjoint.all θ).smul hB₂_sa)
   have hB_spec : spectrum ℝ B ⊆ Set.Ioi (0 : ℝ) :=
-    spectrum_convexCombo_Ioi (ℋ := ℋ) hB₁_sa hB₂_sa hθ0 hθ1 hB₁_spec hB₂_spec
+    LownerHeinzCore.spectrum_convexCombo_Ioi (𝓐 := (ℋ →L[ℂ] ℋ))
+      hB₁_sa hB₂_sa hθ0 hθ1 hB₁_spec hB₂_spec
   have hB_conc :
       (1 - θ) • cfcR (ℋ := ℋ) h B₁ + θ • cfcR (ℋ := ℋ) h B₂ ≤ cfcR (ℋ := ℋ) h B := by
     have hconc' := hconc
@@ -293,38 +277,38 @@ private theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
         hconc' (A := B₁) (B := B₂) (t := θ) hB₁_sa hB₂_sa hθ0 hθ1 hB₁_spec hB₂_spec
     simpa [cfcR, cfc_neg, smul_neg, neg_add, add_comm, add_left_comm, add_assoc] using
       neg_le_neg hneg
-  let S : L ℋ := hSqrt (ℋ := ℋ) h B
-  let IR : L ℋ := hInvSqrt (ℋ := ℋ) h B
-  let S₁ : L ℋ := hSqrt (ℋ := ℋ) h B₁
-  let S₂ : L ℋ := hSqrt (ℋ := ℋ) h B₂
-  let IR₁ : L ℋ := hInvSqrt (ℋ := ℋ) h B₁
-  let IR₂ : L ℋ := hInvSqrt (ℋ := ℋ) h B₂
-  let T₁ : L ℋ := Real.sqrt (1 - θ) • (S₁ * IR)
-  let T₂ : L ℋ := Real.sqrt θ • (S₂ * IR)
-  let M₁ : L ℋ := IR₁ * A₁ * IR₁
-  let M₂ : L ℋ := IR₂ * A₂ * IR₂
+  let S : (ℋ →L[ℂ] ℋ) := hSqrt (ℋ := ℋ) h B
+  let IR : (ℋ →L[ℂ] ℋ) := hInvSqrt (ℋ := ℋ) h B
+  let S₁ : (ℋ →L[ℂ] ℋ) := hSqrt (ℋ := ℋ) h B₁
+  let S₂ : (ℋ →L[ℂ] ℋ) := hSqrt (ℋ := ℋ) h B₂
+  let IR₁ : (ℋ →L[ℂ] ℋ) := hInvSqrt (ℋ := ℋ) h B₁
+  let IR₂ : (ℋ →L[ℂ] ℋ) := hInvSqrt (ℋ := ℋ) h B₂
+  let T₁ : (ℋ →L[ℂ] ℋ) := Real.sqrt (1 - θ) • (S₁ * IR)
+  let T₂ : (ℋ →L[ℂ] ℋ) := Real.sqrt θ • (S₂ * IR)
+  let M₁ : (ℋ →L[ℂ] ℋ) := IR₁ * A₁ * IR₁
+  let M₂ : (ℋ →L[ℂ] ℋ) := IR₂ * A₂ * IR₂
   have hS_sa : IsSelfAdjoint S := hSqrt_selfAdjoint (ℋ := ℋ) h B
   have hIR_sa : IsSelfAdjoint IR := hInvSqrt_selfAdjoint (ℋ := ℋ) h B
   have hS₁_sa : IsSelfAdjoint S₁ := hSqrt_selfAdjoint (ℋ := ℋ) h B₁
   have hS₂_sa : IsSelfAdjoint S₂ := hSqrt_selfAdjoint (ℋ := ℋ) h B₂
   have hIR₁_sa : IsSelfAdjoint IR₁ := hInvSqrt_selfAdjoint (ℋ := ℋ) h B₁
   have hIR₂_sa : IsSelfAdjoint IR₂ := hInvSqrt_selfAdjoint (ℋ := ℋ) h B₂
-  have hSIR : S * IR = (1 : L ℋ) :=
+  have hSIR : S * IR = (1 : (ℋ →L[ℂ] ℋ)) :=
     hSqrt_mul_hInvSqrt_eq_one (ℋ := ℋ) hB_sa hB_spec hcont hpos
-  have hIRS : IR * S = (1 : L ℋ) :=
+  have hIRS : IR * S = (1 : (ℋ →L[ℂ] ℋ)) :=
     hInvSqrt_mul_hSqrt_eq_one (ℋ := ℋ) hB_sa hB_spec hcont hpos
-  have hS₁IR₁ : S₁ * IR₁ = (1 : L ℋ) :=
+  have hS₁IR₁ : S₁ * IR₁ = (1 : (ℋ →L[ℂ] ℋ)) :=
     hSqrt_mul_hInvSqrt_eq_one (ℋ := ℋ) hB₁_sa hB₁_spec hcont hpos
-  have hIR₁S₁ : IR₁ * S₁ = (1 : L ℋ) :=
+  have hIR₁S₁ : IR₁ * S₁ = (1 : (ℋ →L[ℂ] ℋ)) :=
     hInvSqrt_mul_hSqrt_eq_one (ℋ := ℋ) hB₁_sa hB₁_spec hcont hpos
-  have hS₂IR₂ : S₂ * IR₂ = (1 : L ℋ) :=
+  have hS₂IR₂ : S₂ * IR₂ = (1 : (ℋ →L[ℂ] ℋ)) :=
     hSqrt_mul_hInvSqrt_eq_one (ℋ := ℋ) hB₂_sa hB₂_spec hcont hpos
-  have hIR₂S₂ : IR₂ * S₂ = (1 : L ℋ) :=
+  have hIR₂S₂ : IR₂ * S₂ = (1 : (ℋ →L[ℂ] ℋ)) :=
     hInvSqrt_mul_hSqrt_eq_one (ℋ := ℋ) hB₂_sa hB₂_spec hcont hpos
-  have hM₁_nonneg : (0 : L ℋ) ≤ M₁ := by
+  have hM₁_nonneg : (0 : (ℋ →L[ℂ] ℋ)) ≤ M₁ := by
     dsimp [M₁]
     simpa [mul_assoc] using hIR₁_sa.conjugate_nonneg hA₁_nonneg
-  have hM₂_nonneg : (0 : L ℋ) ≤ M₂ := by
+  have hM₂_nonneg : (0 : (ℋ →L[ℂ] ℋ)) ≤ M₂ := by
     dsimp [M₂]
     simpa [mul_assoc] using hIR₂_sa.conjugate_nonneg hA₂_nonneg
   have hM₁_sa : IsSelfAdjoint M₁ := IsSelfAdjoint.of_nonneg hM₁_nonneg
@@ -355,7 +339,7 @@ private theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
               rw [Real.mul_self_sqrt hθ0]
       _ = θ • (IR * cfcR (ℋ := ℋ) h B₂ * IR) := by
               rw [hSqrt_mul_hSqrt_eq (ℋ := ℋ) (B := B₂) hB₂_spec hcont hpos]
-  have hTsum : star T₁ * T₁ + star T₂ * T₂ ≤ (1 : L ℋ) := by
+  have hTsum : star T₁ * T₁ + star T₂ * T₂ ≤ (1 : (ℋ →L[ℂ] ℋ)) := by
     rw [hT₁, hT₂]
     have hmid :
         (1 - θ) • (IR * cfcR (ℋ := ℋ) h B₁ * IR) + θ • (IR * cfcR (ℋ := ℋ) h B₂ * IR)
@@ -365,7 +349,7 @@ private theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
             = IR * ((1 - θ) • cfcR (ℋ := ℋ) h B₁ + θ • cfcR (ℋ := ℋ) h B₂) * IR := by
                 simp [mul_add, add_mul, mul_assoc]
         _ ≤ IR * cfcR (ℋ := ℋ) h B * IR := conj_le_conj (ℋ := ℋ) hB_conc hIR_sa
-    have hunit : IR * cfcR (ℋ := ℋ) h B * IR = (1 : L ℋ) := by
+    have hunit : IR * cfcR (ℋ := ℋ) h B * IR = (1 : (ℋ →L[ℂ] ℋ)) := by
       calc
         IR * cfcR (ℋ := ℋ) h B * IR = IR * (S * S) * IR := by
           rw [hSqrt_mul_hSqrt_eq (ℋ := ℋ) (B := B) hB_spec hcont hpos]
@@ -445,41 +429,39 @@ private theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
     rfl
   simpa [hleft, hright] using houter
 
--- Restricted forward form of Theorem 2.5 on the positive cone.
-theorem theorem_2_5_forward_jointlyConvexOn_psd_pd
-    {f h : ℝ → ℝ}
-    (hf : CondIAll.{u} f)
-    (hconc : OperatorConcaveOn (ℋ := ℋ) (Set.Ioi (0 : ℝ)) h)
-    (hcont : ContinuousOn h (Set.Ioi (0 : ℝ)))
-    (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
-    JointlyConvexOn (psdSet (ℋ := ℋ)) (pdSet (ℋ := ℋ)) (fun A B ↦ (f Δ h) A B) := by
-  have hcoreV : CondV (ℋ := ℋ) f :=
-    theorem_2_5_2_i_all_imp_v (ℋ := ℋ) (f := f) hf
-  exact theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
-    (ℋ := ℋ) (f := f) (h := h) hcoreV hconc hcont hpos
+end CondVCore
+
+
+
 
 -- Restricted localized forward form of Theorem 2.5 on the positive cone.
-theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_Ici
+/--
+Source: A. Ebadian, I. Nikoufar, M. Eshaghi Gordji, "Perspectives of matrix convex functions",
+PNAS 108(18) (2011), 7313--7314, Theorem 2.5. Only the forward direction of the necessary and
+sufficient condition. Localized to psdSet × pdSet under f(0)≤0.
+-/
+theorem jointlyConvexOn_generalizedPerspective_psdSet_pdSet
     {f h : ℝ → ℝ}
-    (hf : CondIciAll.{u} f)
+    (hf : OperatorConvexIciAllContNonposAtZero.{u} f)
     (hconc : OperatorConcaveOn (ℋ := ℋ) (Set.Ioi (0 : ℝ)) h)
     (hcont : ContinuousOn h (Set.Ioi (0 : ℝ)))
     (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
-    JointlyConvexOn (psdSet (ℋ := ℋ)) (pdSet (ℋ := ℋ)) (fun A B ↦ (f Δ h) A B) := by
-  have hcoreV : CondV (ℋ := ℋ) f :=
-    theorem_2_5_2_i_ici_all_imp_v (ℋ := ℋ) (f := f) hf
-  exact theorem_2_5_forward_jointlyConvexOn_psd_pd_of_condV
+    JointlyConvexOn (psdSet (ℋ := ℋ)) pdSet (fun A B ↦ (f Δ h) A B) := by
+  have hcoreV : JensenContractiveColumnCondition (ℋ := ℋ) f :=
+    jensenColumn_of_opConvexIciAll (ℋ := ℋ) (f := f) hf
+  exact jointlyConvexOn_generalizedPerspective_psdSet_pdSet_of_jensenColumn
     (ℋ := ℋ) (f := f) (h := h) hcoreV hconc hcont hpos
 
 omit [Nontrivial ℋ] in
 private lemma generalizedPerspective_neg
-    (f h : ℝ → ℝ) (A B : L ℋ) :
+    (f h : ℝ → ℝ) (A B : (ℋ →L[ℂ] ℋ)) :
     ((fun x : ℝ ↦ -f x) Δ h) A B = -((f Δ h) A B) := by
-  simp [GeneralizedPerspective, cfcR, cfc_neg, mul_assoc]
+  simp [generalizedPerspective, cfcR, cfc_neg, mul_assoc]
 
 omit [Nontrivial ℋ] in
-private lemma jointlyConvexOn_neg
-    {s : Set (L ℋ)} {t : Set (L ℋ)} {Φ : L ℋ → L ℋ → L ℋ}
+private lemma jointlyConcaveOn_of_jointlyConvexOn_neg
+    {s : Set (ℋ →L[ℂ] ℋ)} {t : Set (ℋ →L[ℂ] ℋ)} {Φ : (ℋ →L[ℂ] ℋ) →
+        (ℋ →L[ℂ] ℋ) → (ℋ →L[ℂ] ℋ)}
     (hΦ : JointlyConvexOn s t (fun A B ↦ -Φ A B)) :
     JointlyConcaveOn s t Φ := by
   intro A₁ A₂ B₁ B₂ θ hA₁ hA₂ hB₁ hB₂ hθ0 hθ1
@@ -490,30 +472,14 @@ private lemma jointlyConvexOn_neg
     simpa [smul_neg, neg_add, add_comm, add_left_comm, add_assoc] using hneg
   exact (neg_le_neg_iff.mp hneg')
 
-/-- Restricted forward form of Corollary 2.6 on the positive cone. -/
-theorem theorem_2_6_forward_jointlyConcaveOn_psd_pd
-    {f h : ℝ → ℝ}
-    (hfconc : OperatorConcaveAll.{u} f)
-    (hf0 : 0 ≤ f 0)
-    (hconc : OperatorConcaveOn (ℋ := ℋ) (Set.Ioi (0 : ℝ)) h)
-    (hcont : ContinuousOn h (Set.Ioi (0 : ℝ)))
-    (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
-    JointlyConcaveOn (psdSet (ℋ := ℋ)) (pdSet (ℋ := ℋ)) (fun A B ↦ (f Δ h) A B) := by
-  have hfneg : CondIAll.{u} (fun x : ℝ ↦ -f x) := by
-    refine ⟨?_, ?_⟩
-    · intro K _ _ _ _
-      simpa [OperatorConcave] using (hfconc (K := K))
-    · simpa using (neg_nonpos.mpr hf0)
-  have hconv_neg :
-      JointlyConvexOn (psdSet (ℋ := ℋ)) (pdSet (ℋ := ℋ))
-        (fun A B ↦ -((f Δ h) A B)) := by
-    simpa [generalizedPerspective_neg] using
-      (theorem_2_5_forward_jointlyConvexOn_psd_pd
-        (ℋ := ℋ) (f := fun x : ℝ ↦ -f x) (h := h) hfneg hconc hcont hpos)
-  exact jointlyConvexOn_neg (ℋ := ℋ) hconv_neg
+/-- Restricted localized forward form of Corollary 2.6 on the positive cone.
 
-/-- Restricted localized forward form of Corollary 2.6 on the positive cone. -/
-theorem theorem_2_6_forward_jointlyConcaveOn_psd_pd_Ici
+Source: A. Ebadian, I. Nikoufar, M. Eshaghi Gordji, "Perspectives of matrix convex functions",
+PNAS 108(18) (2011), 7313--7314, Corollary 2.6. The forward direction of the original proposition is
+localized to psdSet × pdSet.
+The condition at the origin follows the correction source given separately. Correction source:
+Nikoufar (2016), Theorem 1(i) (the corrected version with $f(0)\geq 0$). -/
+theorem jointlyConcaveOn_generalizedPerspective_psdSet_pdSet
     {f h : ℝ → ℝ}
     (hfconc : OperatorConcaveOnAll.{u} (Set.Ici (0 : ℝ)) f)
     (hfcont : ContinuousOn f (Set.Ici (0 : ℝ)))
@@ -521,8 +487,8 @@ theorem theorem_2_6_forward_jointlyConcaveOn_psd_pd_Ici
     (hconc : OperatorConcaveOn (ℋ := ℋ) (Set.Ioi (0 : ℝ)) h)
     (hcont : ContinuousOn h (Set.Ioi (0 : ℝ)))
     (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
-    JointlyConcaveOn (psdSet (ℋ := ℋ)) (pdSet (ℋ := ℋ)) (fun A B ↦ (f Δ h) A B) := by
-  have hfneg : CondIciAll.{u} (fun x : ℝ ↦ -f x) := by
+    JointlyConcaveOn (psdSet (ℋ := ℋ)) pdSet (fun A B ↦ (f Δ h) A B) := by
+  have hfneg : OperatorConvexIciAllContNonposAtZero.{u} (fun x : ℝ ↦ -f x) := by
     refine ⟨?_, ?_, ?_⟩
     · intro K _ _ _ _
       simpa [OperatorConcaveOn, OperatorConvexOn] using (hfconc (K := K))
@@ -532,25 +498,28 @@ theorem theorem_2_6_forward_jointlyConcaveOn_psd_pd_Ici
       JointlyConvexOn (psdSet (ℋ := ℋ)) (pdSet (ℋ := ℋ))
         (fun A B ↦ -((f Δ h) A B)) := by
     simpa [generalizedPerspective_neg] using
-      (theorem_2_5_forward_jointlyConvexOn_psd_pd_Ici
+      (jointlyConvexOn_generalizedPerspective_psdSet_pdSet
         (ℋ := ℋ) (f := fun x : ℝ ↦ -f x) (h := h) hfneg hconc hcont hpos)
-  exact jointlyConvexOn_neg (ℋ := ℋ) hconv_neg
+  exact jointlyConcaveOn_of_jointlyConvexOn_neg (ℋ := ℋ) hconv_neg
 
 end Theorem25Forward
 
--- GeneralizedPerspectiveFunction Page 1 https://www.pnas.org/doi/10.1073/pnas.1102518108
+-- Ebadian--Nikoufar--Eshaghi Gordji (2011), Perspectives of matrix convex functions,
+-- page 1, DOI https://www.pnas.org/doi/10.1073/pnas.1102518108
 -- For any qudit ℋ, any A ∈ Herm(ℋ), any B ∈ Pd(ℋ),
 -- any real-valued continuous function f, any positive-valued continuous function h>0,
 -- (fΔh)(A,B) := h(B)^{1/2} f(h(B)^{-1/2} A h(B)^{-1/2}) h(B)^{1/2}
 
--- Theorem 2.5 https://www.pnas.org/doi/10.1073/pnas.1102518108
--- Suppose that f is a continous function with f(0) ≤ 0, and h is a continuous function with h > 0.
+-- Ebadian--Nikoufar--Eshaghi Gordji (2011), Theorem 2.5,
+-- DOI https://www.pnas.org/doi/10.1073/pnas.1102518108
+-- Suppose that f is a continuous function with f(0) ≤ 0, and h is a continuous function with h > 0.
 -- If f is operator convex and h is operator concave,
 -- then fΔh is jointly convex
 
 end GeneralizedPerspectiveFunction
 
--- Corollary 2.6 https://www.pnas.org/doi/10.1073/pnas.1102518108
--- Suppose that f is a continous function with f(0) ≥ 0, and h is a continuous function with h > 0.
--- If f is operator convcave and h is operator concave,
+-- Ebadian--Nikoufar--Eshaghi Gordji (2011), Corollary 2.6(i),
+-- corrected by Nikoufar (2016), Theorem 1(i).
+-- Suppose that f is a continuous function with f(0) ≥ 0, and h is a continuous function with h > 0.
+-- If f is operator concave and h is operator concave,
 -- then fΔh is jointly concave

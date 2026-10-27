@@ -1,10 +1,18 @@
 /-
 Copyright (c) 2025 Hayata Yamasaki. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors:
+Authors: Hayata Yamasaki
 -/
 
 import Quantum.TraceInequality.GeneralizedPerspectiveFunction
+
+/-!
+# Operator geometric and power means
+
+Operator power means are defined through the generalized perspective. This module
+proves their joint concavity and order properties from the operator convexity and
+concavity of real powers.
+-/
 
 namespace OperatorGeometricMean
 
@@ -17,9 +25,13 @@ variable {ℋ : Type u}
 variable [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ] [CompleteSpace ℋ]
 variable [Nontrivial ℋ]
 
-/-- The operator `(α, β)`-power mean, realized as a generalized perspective. -/
-noncomputable def operatorPowerMean (α β : ℝ) (A B : L ℋ) : L ℋ :=
-  GeneralizedPerspective (fun x : ℝ ↦ x ^ α) (fun x : ℝ ↦ x ^ β) A B
+/-- The operator `(α, β)`-power mean, realized as a generalized perspective.
+
+Source: I. Nikoufar, A. Ebadian, M. Eshaghi Gordji, "The simplest proof of Lieb concavity
+theorem", Advances in Mathematics 248 (2013), 531--533, p. 532. Corresponds to M(α,β;A,B)=B
+#_(α,β) A, with the operator arguments of the source exchanged. Defined everywhere via CFC. -/
+noncomputable def operatorPowerMean (α β : ℝ) (A B : QuantumState.B ℋ) : QuantumState.B ℋ :=
+  generalizedPerspective (fun x : ℝ ↦ x ^ α) (fun x : ℝ ↦ x ^ β) A B
 
 private lemma rpow_continuousOn_Ici (p : ℝ) (hp : 0 ≤ p) :
     ContinuousOn (fun x : ℝ ↦ x ^ p) (Set.Ici (0 : ℝ)) := by
@@ -48,28 +60,35 @@ private lemma rpow_pos_on_Ioi (p : ℝ) :
 /--
 Theorem 1.1, concave range: the operator `(α, β)`-power mean is jointly concave on
 strictly positive operators for `0 ≤ α, β ≤ 1`.
+
+Source: I. Nikoufar, A. Ebadian, M. Eshaghi Gordji, "The simplest proof of Lieb concavity
+theorem", Advances in Mathematics 248 (2013), 531--533, Theorem 1.1 (concave range).
+With the operator arguments of the source exchanged, this corresponds to the closed exponent
+range 0≤α,β≤1 on the positive definite cone.
 -/
-theorem operatorPowerMean_jointlyConcaveOn_pdSet
+theorem jointlyConcaveOn_operatorPowerMean_pdSet
     {α β : ℝ}
     (hα : α ∈ Set.Icc (0 : ℝ) 1)
     (hβ : β ∈ Set.Icc (0 : ℝ) 1) :
-    JointlyConcaveOn (pdSet (ℋ := ℋ)) (pdSet (ℋ := ℋ))
+    JointlyConcaveOn pdSet pdSet
       (operatorPowerMean (ℋ := ℋ) α β) := by
   intro A₁ A₂ B₁ B₂ θ hA₁ hA₂ hB₁ hB₂ hθ0 hθ1
   have hconc :=
-    theorem_2_6_forward_jointlyConcaveOn_psd_pd_Ici
+    jointlyConcaveOn_generalizedPerspective_psdSet_pdSet
       (ℋ := ℋ)
       (f := fun x : ℝ ↦ x ^ α)
       (h := fun x : ℝ ↦ x ^ β)
       (hfconc := by
         intro K _ _ _ _
-        exact power_Icc_zero_one_operatorConcaveOn_Ici (ℋ := K) α hα)
+        exact LownerHeinzCore.operatorConcaveOn_rpow_Ici
+          (𝓐 := (K →L[ℂ] K)) α hα)
       (hfcont := rpow_continuousOn_Ici α hα.1)
       (hf0 := by
         exact Real.rpow_nonneg (show (0 : ℝ) ≤ 0 by simp) α)
       (hconc := by
         exact operatorConcaveOn_Ioi_of_Ici (ℋ := ℋ)
-          (power_Icc_zero_one_operatorConcaveOn_Ici (ℋ := ℋ) β hβ))
+          (LownerHeinzCore.operatorConcaveOn_rpow_Ici
+            (𝓐 := (ℋ →L[ℂ] ℋ)) β hβ))
       (hcont := by
         intro x hx
         exact (Real.continuousAt_rpow_const x β (Or.inl (ne_of_gt hx))).continuousWithinAt)
@@ -82,30 +101,37 @@ theorem operatorPowerMean_jointlyConcaveOn_pdSet
 /--
 Theorem 1.1, convex range: the operator `(α, β)`-power mean is jointly convex on
 strictly positive operators for `1 ≤ α ≤ 2` and `0 ≤ β ≤ 1`.
+
+Source: I. Nikoufar, A. Ebadian, M. Eshaghi Gordji, "The simplest proof of Lieb concavity
+theorem", Advances in Mathematics 248 (2013), 531--533, Theorem 1.1 (convex range).
+With the operator arguments of the source exchanged, this corresponds to the closed exponent
+range 1≤α≤2, 0≤β≤1 on the positive definite cone.
 -/
-theorem operatorPowerMean_jointlyConvexOn_pdSet
+theorem jointlyConvexOn_operatorPowerMean_pdSet
     {α β : ℝ}
     (hα : α ∈ Set.Icc (1 : ℝ) 2)
     (hβ : β ∈ Set.Icc (0 : ℝ) 1) :
-    JointlyConvexOn (pdSet (ℋ := ℋ)) (pdSet (ℋ := ℋ))
+    JointlyConvexOn pdSet pdSet
       (operatorPowerMean (ℋ := ℋ) α β) := by
   intro A₁ A₂ B₁ B₂ θ hA₁ hA₂ hB₁ hB₂ hθ0 hθ1
   have hconv :=
-    theorem_2_5_forward_jointlyConvexOn_psd_pd_Ici
+    jointlyConvexOn_generalizedPerspective_psdSet_pdSet
       (ℋ := ℋ)
       (f := fun x : ℝ ↦ x ^ α)
       (h := fun x : ℝ ↦ x ^ β)
       (hf := by
         refine ⟨?_, ?_, ?_⟩
         · intro K _ _ _ _
-          exact power_Icc_one_two_operatorConvexOn_Ici (ℋ := K) α hα
+          exact LownerHeinzCore.operatorConvexOn_rpow_Ici
+            (𝓐 := (K →L[ℂ] K)) α hα
         · exact rpow_continuousOn_Ici α (by linarith [hα.1])
         · have hα0 : α ≠ 0 := by linarith [hα.1]
           simp [Real.zero_rpow hα0]
       )
       (hconc := by
         exact operatorConcaveOn_Ioi_of_Ici (ℋ := ℋ)
-          (power_Icc_zero_one_operatorConcaveOn_Ici (ℋ := ℋ) β hβ))
+          (LownerHeinzCore.operatorConcaveOn_rpow_Ici
+            (𝓐 := (ℋ →L[ℂ] ℋ)) β hβ))
       (hcont := by
         intro x hx
         exact (Real.continuousAt_rpow_const x β (Or.inl (ne_of_gt hx))).continuousWithinAt)

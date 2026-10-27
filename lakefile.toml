@@ -1,10 +1,10 @@
 name = "Quantum"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["Quantum"]
+defaultTargets = ["Quantum", "Paper1Solution"]
 
 [leanOptions]
-pp.unicode.fun = true # pretty-prints `fun a ↦ b`
+pp.unicode.fun = true
 relaxedAutoImplicit = false
 weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
@@ -13,10 +13,22 @@ maxSynthPendingDepth = 3
 name = "mathlib"
 scope = "leanprover-community"
 
-
 [[require]]
-name = "checkdecls"
-git = "https://github.com/PatrickMassot/checkdecls.git"
+name = "Comparator"
+scope = "leanprover"
+git = "https://github.com/leanprover/comparator.git"
+rev = "v4.29.0-rc6"
 
 [[lean_lib]]
 name = "Quantum"
+roots = ["Quantum"]
+
+[[lean_lib]]
+name = "Paper1Solution"
+roots = ["ComparatorChallenges.Paper1Solution"]
+
+# Challenge is a statement-only comparator fixture containing the original sorry placeholders.
+# Build it separately; it shares declaration names with Paper1Solution.
+[[lean_lib]]
+name = "Paper1Challenge"
+roots = ["ComparatorChallenges.Paper1"]
