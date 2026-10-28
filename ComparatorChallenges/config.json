@@ -1,0 +1,26 @@
+{
+  "challenge_module": "ComparatorChallenges.Challenge",
+  "solution_module": "ComparatorChallenges.Solution",
+  "theorem_names": [
+    "ComparatorChallenges.strictDPIEquivalences",
+    "ComparatorChallenges.outputSupportDPIEquivalences",
+    "ComparatorChallenges.loewnerHalfLineIntegralRepUnique",
+    "ComparatorChallenges.loewnerClosedPositiveOfCFCWithEndpoint",
+    "ComparatorChallenges.hansenPedersenOperatorConvexityCharacterizations",
+    "ComparatorChallenges.hiaiPetzSupportTracePowerMonotonicity",
+    "ComparatorChallenges.hiaiPetzLiebAndoConvexity",
+    "ComparatorChallenges.liebConcavity",
+    "ComparatorChallenges.sandwichedRenyiDiv_monotone",
+    "ComparatorChallenges.sandwichedRenyiDivNN_monotone",
+    "ComparatorChallenges.umegakiMonotoneOnPosDef",
+    "ComparatorChallenges.monotoneOnNonNeg",
+    "ComparatorChallenges.strongSubadditivity_of_state",
+    "ComparatorChallenges.loewnerUnitIntervalCharacterizations"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "enable_nanoda": true
+}

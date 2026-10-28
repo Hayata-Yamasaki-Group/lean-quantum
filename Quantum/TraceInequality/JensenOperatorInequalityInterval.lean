@@ -1,25 +1,12 @@
-import Quantum.TraceInequality.UnitaryBlockMatrix
-import Quantum.TraceInequality.LownerHeinzTheorem
-import Quantum.TraceInequality.LownerHeinz.Defs
-import Quantum.TraceInequality.Core
-import Quantum.TraceInequality.CompressionInequality.SpectralBounds
-import Quantum.TraceInequality.CompressionInequality.RotatedBlockCompression
-import Quantum.TraceInequality.CompressionInequality.JuliaUnitary
-import Quantum.TraceInequality.CompressionInequality.DefectOperators
-import Quantum.TraceInequality.CompressionInequality.ContractionInstances
-import Quantum.TraceInequality.CompressionInequality.BlockMatrix
-import Quantum.TraceInequality.BlockDiagonal
-import Quantum.TraceInequality.BasicTheorems
-import Quantum.TraceInequality.Basic
-import Quantum.QuantumMechanics.OperatorNotation
 import Quantum.TraceInequality.JensenOperatorInequalityFinite
+import Quantum.TraceInequality.HansenPedersen.CompressionInequality.ConvexityToContraction
+import Quantum.TraceInequality.CoreRetained
 
 /-!
-Finite Jensen inequalities: open-interval version without continuity assumption;
-general interval with continuity assumed only at included endpoints
-(interior continuity derived); half-line interface as a specialization.
-Source: arXiv:2607.05492v1 main.tex:945–955;
-Hansen–Pedersen (2003), Jensen's Operator Inequality.
+Finite Jensen inequalities on general intervals.
+Source: main.tex:945–955; Hansen–Pedersen (2003), Jensen's Operator Inequality.
+For open intervals, no continuity assumption is needed; for included endpoints,
+continuity within the interval is assumed at those endpoints.
 -/
 namespace JensenOperatorInequality
 open LownerHeinzTheorem
@@ -28,7 +15,7 @@ variable {ℋ : Type u} [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ]
   [CompleteSpace ℋ] [Nontrivial ℋ]
 
 /-- Scalar restriction of localized operator convexity on an order-connected set. -/
-theorem convexOn_of_operatorConvexOn_interval {I : Set ℝ} {f : ℝ → ℝ}
+theorem operatorConvexOn_convexOn_interval {I : Set ℝ} {f : ℝ → ℝ}
     (hI : I.OrdConnected) (hf : OperatorConvexOn (ℋ := ℋ) I f) :
     ConvexOn ℝ I f := by
   refine ⟨hI.convex, ?_⟩
@@ -99,12 +86,13 @@ theorem convexOn_of_operatorConvexOn_interval {I : Set ℝ} {f : ℝ → ℝ}
     simpa [hz_eq] using hspec_le z hz
   simpa [smul_eq_mul, ha'] using hscalar'
 
+
 include ℋ in
 /-- Uniform localized operator convexity implies continuity in the interior. -/
-theorem continuousOn_interior_of_operatorConvexOnAll {I : Set ℝ} {f : ℝ → ℝ}
+theorem operatorConvexOnAll_continuousOn_interior {I : Set ℝ} {f : ℝ → ℝ}
     (hI : I.OrdConnected) (hf : OperatorConvexOnAll.{u} I f) :
     ContinuousOn f (interior I) :=
-  (convexOn_of_operatorConvexOn_interval (ℋ := ℋ) hI (hf (K := ℋ))).continuousOn_interior
+  (operatorConvexOn_convexOn_interval (ℋ := ℋ) hI (hf (K := ℋ))).continuousOn_interior
 
 /-- The only topological gap after interior continuity is at included endpoints. -/
 theorem continuousOn_of_interior_and_endpoints {I : Set ℝ} {f : ℝ → ℝ}
@@ -115,6 +103,31 @@ theorem continuousOn_of_interior_and_endpoints {I : Set ℝ} {f : ℝ → ℝ}
   by_cases hxi : x ∈ interior I
   · exact ((isOpen_interior.continuousOn_iff.mp hi) hxi).continuousWithinAt
   · exact he x ⟨hx, hxi⟩
+
+include ℋ in
+/-- For open intervals there are no included endpoint obligations. -/
+theorem operatorConvexOnAll_continuousOn_of_isOpen {I : Set ℝ} {f : ℝ → ℝ}
+    (hI : I.OrdConnected) (hopen : IsOpen I) (hf : OperatorConvexOnAll.{u} I f) :
+    ContinuousOn f I := by
+  simpa only [hopen.interior_eq] using
+    operatorConvexOnAll_continuousOn_interior (ℋ := ℋ) hI (@hf)
+
+include ℋ in
+/-- Spectrum-level CFC continuity with only included endpoint continuity retained. -/
+theorem operatorConvexOnAll_continuousOn_spectrum_of_endpoints
+    {I : Set ℝ} {f : ℝ → ℝ} (hI : I.OrdConnected)
+    (hf : OperatorConvexOnAll.{u} I f)
+    (he : ∀ x ∈ I \ interior I, ContinuousWithinAt f I x)
+    (A : ℋ →L[ℂ] ℋ) (hAs : spectrum ℝ A ⊆ I) :
+    ContinuousOn f (spectrum ℝ A) :=
+  (continuousOn_of_interior_and_endpoints
+    (operatorConvexOnAll_continuousOn_interior (ℋ := ℋ) hI (@hf)) he).mono hAs
+
+omit [Nontrivial ℋ] in
+/-- Finite spectra require no regularity of the scalar function. -/
+theorem continuousOn_spectrum_of_finite (f : ℝ → ℝ) (A : ℋ →L[ℂ] ℋ)
+    (hfin : (spectrum ℝ A).Finite) : ContinuousOn f (spectrum ℝ A) :=
+  hfin.continuousOn f
 
 omit [Nontrivial ℋ] in
 /-- Scalar bounds survive a finite contractive column when the bounding interval contains zero. -/
@@ -254,7 +267,7 @@ private lemma star_juliaBlock_mul_diag_mul_juliaBlock
 
 /-- Sign-flipped Julia-block conjugation of a diagonal block operator
 (`V = blockCLM C E D (-(star C))` shape), computed once over atom operators.
-The proof uses block multiplication and self-adjointness of the defect blocks. -/
+Extracted from `conditionI_implies_conditionII_fixed`. -/
 private lemma star_signedJuliaBlock_mul_diag_mul_signedJuliaBlock
     {K : Type u} [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
     (C E D W Z : L K) (hE : star E = E) (hD : star D = D) :
@@ -268,8 +281,10 @@ private lemma star_signedJuliaBlock_mul_diag_mul_signedJuliaBlock
 
 /-- Midpoint average of two block operators with equal diagonal and opposite
 off-diagonal blocks: the off-diagonal parts cancel and the average collapses to
-the block-diagonal operator. The proof adds the blocks componentwise, cancels
-the off-diagonal sums, and normalizes the diagonal sums by scalar multiplication. -/
+the block-diagonal operator.  Extracted from
+`conditionI_implies_conditionII_fixed`, where the same block normalization was
+previously repeated twice (once for the dilated operators, once for their CFC
+images). -/
 private lemma half_smul_add_blockCLM_of_neg
     {K : Type u} [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
     (a b b' c c' d : L K) (hb : b' = -b) (hc : c' = -c) :
@@ -287,14 +302,46 @@ private lemma half_smul_add_blockCLM_of_neg
 
 /-- Two-sided compression of the real CFC of `0` reduces to a scalar multiple:
 `cfcR f 0` is the constant `f 0` times the identity, so `D * cfcR f 0 * D`
-collapses to `f 0 • (D * D)`. The proof evaluates the real CFC at zero and rewrites
-the scalar algebra map as scalar multiplication. -/
+collapses to `f 0 • (D * D)`.  Extracted from
+`conditionI_implies_conditionII_fixed`, where this CFC normalization was the
+heaviest single step of the sign-condition argument. -/
 private lemma mul_cfcR_zero_mul {K : Type u}
     [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
     [ContinuousFunctionalCalculus ℝ (L K) IsSelfAdjoint]
     (f : ℝ → ℝ) (D : L K) :
     D * cfcR (ℋ := K) f 0 * D = (f 0 : ℝ) • (D * D) := by
   simp [cfcR, Algebra.algebraMap_eq_smul_one]
+
+/-- Discarding the `f 0` defect term: when `f 0 ≤ 0` and `D` is self-adjoint,
+`X + D * cfcR f 0 * D ≤ X`. -/
+private lemma add_mul_cfcR_zero_mul_le {K : Type u}
+    [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+    [ContinuousFunctionalCalculus ℝ (L K) IsSelfAdjoint]
+    (f : ℝ → ℝ) (hf0 : f 0 ≤ 0) (X D : L K) (hD : star D = D) :
+    X + D * cfcR (ℋ := K) f 0 * D ≤ X := by
+  have hDD : 0 ≤ D * D := by
+    have h := star_mul_self_nonneg D
+    rwa [hD] at h
+  have h : D * cfcR (ℋ := K) f 0 * D ≤ 0 := by
+    rw [mul_cfcR_zero_mul]
+    exact smul_nonpos_of_nonpos_of_nonneg hf0 hDD
+  simpa using add_le_add_left h X
+
+
+/-- Midpoint instance of operator convexity on an interval, with the convex combination
+`(1 - 1/2) • A + (1/2) • B` rewritten as `(1/2) • (A + B)` on both sides. -/
+private theorem convex_half_apply_interval {K : Type u}
+    [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+    [ContinuousFunctionalCalculus ℝ (L K) IsSelfAdjoint] [Nontrivial (L K)]
+    {I : Set ℝ} {f : ℝ → ℝ}
+    (hConv : HOperatorConvexOnInterval K I f) {A B : L K}
+    (hA : IsSelfAdjoint A) (hB : IsSelfAdjoint B)
+    (hσA : spectrum ℝ A ⊆ I) (hσB : spectrum ℝ B ⊆ I) :
+    cfcR (ℋ := K) f ((1 / 2 : ℝ) • (A + B)) ≤
+      (1 / 2 : ℝ) • (cfcR (ℋ := K) f A + cfcR (ℋ := K) f B) := by
+  have h := hConv (A := A) (B := B) (t := (1 / 2 : ℝ)) hA hB (by norm_num) (by norm_num)
+    hσA hσB
+  rwa [show (1 : ℝ) - 1 / 2 = 1 / 2 by norm_num, ← smul_add, ← smul_add] at h
 
 /-- General-interval Julia dilation. Continuity is explicit at this layer. -/
 theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
@@ -304,9 +351,6 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
     [Nontrivial H] {A C : L H} (hA : IsSelfAdjoint A)
     (hσA : spectrum ℝ A ⊆ I) (hC : ‖C‖ ≤ 1) :
     cfcR f (star C * A * C) ≤ star C * cfcR f A * C := by
-  letI : Algebra ℝ (L (WithLp 2 (H × H))) := inferInstance
-  letI : NormedSpace ℝ (L (WithLp 2 (H × H))) := inferInstance
-  letI : Module ℝ (L (WithLp 2 (H × H))) := inferInstance
   /- Step 1: Build the Julia dilation encoding the contraction as a midpoint problem. -/
   haveI : Nontrivial H := HansenPedersen.nontrivial_of_nontrivial_L
   haveI : Nontrivial (WithLp 2 (H × H)) := inferInstance
@@ -336,24 +380,14 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
     simpa [A0] using diag_spectrum
       (K := H) hA h0self hσA (zero_spectrum h0)
   have hXself : IsSelfAdjoint X := by
-    simpa [X, A0, U0, U] using hA0self.map (unitaryConjStarAlgHom U)
+    exact hA0self.conjugate' _
   have hYself : IsSelfAdjoint Y := by
-    simpa [Y, A0, V] using hA0self.map (unitaryConjStarAlgHom V)
-  have hσX : spectrum ℝ X ⊆ I := by
-    have hspec : spectrum ℝ X = spectrum ℝ A0 := by
-      dsimp [X]
-      exact Unitary.spectrum_star_left_conjugate (R := ℝ) (a := A0) (U := U)
-    rw [hspec]
-    exact hσA0
-  have hσY : spectrum ℝ Y ⊆ I := by
-    have hspec : spectrum ℝ Y = spectrum ℝ A0 := by
-      dsimp [Y]
-      exact Unitary.spectrum_star_left_conjugate (R := ℝ) (a := A0) (U := V)
-    rw [hspec]
-    exact hσA0
-  have hConv :
-      HOperatorConvexOnInterval (WithLp 2 (H × H)) (I) f :=
-    hop (K := WithLp 2 (H × H))
+    exact hA0self.conjugate' _
+  have hσX : spectrum ℝ X ⊆ I :=
+    (Unitary.spectrum_star_left_conjugate (R := ℝ) (a := A0) (U := U)).trans_subset hσA0
+  have hσY : spectrum ℝ Y ⊆ I :=
+    (Unitary.spectrum_star_left_conjugate (R := ℝ) (a := A0) (U := V)).trans_subset hσA0
+  have hConv := hop (K := WithLp 2 (H × H))
   have hA0block : A0 = blockCLM A 0 0 0 := by
     dsimp [A0]
     exact (blockCLM_zero_zero (K := H) A (0 : L H)).symm
@@ -362,7 +396,7 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
       X =
         blockCLM M (-(star C * A * E)) (-(E * A * C)) N := by
     dsimp only [X, U, U0]
-    rw [show A0 = blockCLM A 0 0 0 by simpa [blockCLM_zero_zero] using hA0block]
+    rw [hA0block]
     rw [star_juliaBlock_mul_diag_mul_juliaBlock (K := H) C E D A 0 hEstar hDstar]
     simp [M, N]
   have hVblock :
@@ -375,7 +409,7 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
         blockCLM M (star C * A * E) (E * A * C) N := by
     dsimp only [Y]
     rw [hVblock]
-    rw [show A0 = blockCLM A 0 0 0 by simpa [blockCLM_zero_zero] using hA0block]
+    rw [hA0block]
     rw [star_signedJuliaBlock_mul_diag_mul_signedJuliaBlock (K := H) C E D A 0 hEstar hDstar]
     simp [M, N]
   have havg :
@@ -404,21 +438,13 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
   have hcfX :
       cfcR (ℋ := WithLp 2 (H × H)) f X =
         star (↑U : L (WithLp 2 (H × H))) * F0 * (↑U : L _) := by
-    calc
-      cfcR (ℋ := WithLp 2 (H × H)) f X =
-          star (↑U : L (WithLp 2 (H × H))) *
-            cfcR (ℋ := WithLp 2 (H × H)) f A0 * (↑U : L _) := by
-            simpa [X] using unitary_cfc (K := WithLp 2 (H × H)) hf hA0self hσA0 U
-      _ = star (↑U : L (WithLp 2 (H × H))) * F0 * (↑U : L _) := by rw [hcfA0]
+    rw [← hcfA0]
+    exact unitary_cfc (K := WithLp 2 (H × H)) hf hA0self hσA0 U
   have hcfY :
       cfcR (ℋ := WithLp 2 (H × H)) f Y =
         star (↑V : L (WithLp 2 (H × H))) * F0 * (↑V : L _) := by
-    calc
-      cfcR (ℋ := WithLp 2 (H × H)) f Y =
-          star (↑V : L (WithLp 2 (H × H))) *
-            cfcR (ℋ := WithLp 2 (H × H)) f A0 * (↑V : L _) := by
-            simpa [Y] using unitary_cfc (K := WithLp 2 (H × H)) hf hA0self hσA0 V
-      _ = star (↑V : L (WithLp 2 (H × H))) * F0 * (↑V : L _) := by rw [hcfA0]
+    rw [← hcfA0]
+    exact unitary_cfc (K := WithLp 2 (H × H)) hf hA0self hσA0 V
   have hcfXblock :
       cfcR (ℋ := WithLp 2 (H × H)) f X =
         blockCLM R
@@ -427,9 +453,7 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
           T := by
     rw [hcfX]
     dsimp only [F0, U, U0]
-    rw [show HansenPedersen.Internal.diagMapCLM (cfcR (ℋ := H) f A) (cfcR (ℋ := H) f 0) =
-          blockCLM (cfcR (ℋ := H) f A) 0 0 (cfcR (ℋ := H) f 0) by
-          simp [blockCLM_zero_zero]]
+    rw [← blockCLM_zero_zero]
     rw [star_juliaBlock_mul_diag_mul_juliaBlock (K := H) C E D
       (cfcR (ℋ := H) f A) (cfcR (ℋ := H) f 0) hEstar hDstar]
   have hcfYblock :
@@ -440,9 +464,7 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
           T := by
     rw [hcfY, hVblock]
     dsimp only [F0]
-    rw [show HansenPedersen.Internal.diagMapCLM (cfcR (ℋ := H) f A) (cfcR (ℋ := H) f 0) =
-          blockCLM (cfcR (ℋ := H) f A) 0 0 (cfcR (ℋ := H) f 0) by
-          simp [blockCLM_zero_zero]]
+    rw [← blockCLM_zero_zero]
     rw [star_signedJuliaBlock_mul_diag_mul_signedJuliaBlock (K := H) C E D
       (cfcR (ℋ := H) f A) (cfcR (ℋ := H) f 0) hEstar hDstar]
   have hrhs :
@@ -450,16 +472,14 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
           (cfcR (ℋ := WithLp 2 (H × H)) f X + cfcR (ℋ := WithLp 2 (H × H)) f Y) =
         HansenPedersen.Internal.diagMapCLM R T := by
     rw [hcfXblock, hcfYblock]
-    exact half_smul_add_blockCLM_of_neg R _ _ _ _ T (by abel) (by abel)
+    exact half_smul_add_blockCLM_of_neg R _ _ _ _ T
+      (by rw [neg_sub, sub_eq_neg_add]) (by rw [neg_sub, sub_eq_neg_add])
   /- Step 5: Apply midpoint convexity on the dilation to obtain a diagonal block inequality. -/
   have hconv :
       cfcR (ℋ := WithLp 2 (H × H)) f ((1 / 2 : ℝ) • (X + Y)) ≤
         (1 / 2 : ℝ) •
-          (cfcR (ℋ := WithLp 2 (H × H)) f X + cfcR (ℋ := WithLp 2 (H × H)) f Y) := by
-    have h := hConv (t := (1 / 2 : ℝ)) hXself hYself (by norm_num)
-      (by norm_num) hσX hσY
-    norm_num at h
-    simpa only [smul_add] using h
+          (cfcR (ℋ := WithLp 2 (H × H)) f X + cfcR (ℋ := WithLp 2 (H × H)) f Y) :=
+    convex_half_apply_interval (K := WithLp 2 (H × H)) hConv hXself hYself hσX hσY
   have hdiag :
       HansenPedersen.Internal.diagMapCLM (cfcR (ℋ := H) f M) (cfcR (ℋ := H) f N) ≤
         HansenPedersen.Internal.diagMapCLM R T := by
@@ -485,17 +505,8 @@ theorem contraction {I : Set ℝ} {f : ℝ → ℝ}
       (HansenPedersen.isSelfAdjoint_cfcR (K := H) (f := f) (A := M))
       hRself
       hdiag
-  have hcf0_term_nonpos : D * cfcR (ℋ := H) f 0 * D ≤ 0 := by
-    calc
-      D * cfcR (ℋ := H) f 0 * D = (f 0 : ℝ) • (D * D) :=
-        mul_cfcR_zero_mul f D
-      _ ≤ (0 : ℝ) • (D * D) := by
-        exact smul_le_smul_of_nonneg_right hf0
-          (by simpa [D, hDstar] using star_mul_self_nonneg D)
-      _ = 0 := by simp
-  have hR_le : R ≤ star C * cfcR (ℋ := H) f A * C := by
-    simpa [R] using add_le_add_left hcf0_term_nonpos (star C * cfcR (ℋ := H) f A * C)
-  exact le_trans hcfM_le hR_le
+  exact le_trans hcfM_le (add_mul_cfcR_zero_mul_le f hf0 _ D hDstar)
+
 
 end IntervalCompression
 noncomputable local instance : Algebra ℝ (HSum ℋ →L[ℂ] HSum ℋ) := inferInstance
@@ -532,6 +543,7 @@ private lemma interval_block_sum {ι : Type v} [Fintype ι] (A : ι → ℋ →L
   simpa only [blockDiagonalHom_apply, Prod.fst_sum, Prod.snd_sum,
     Finset.sum_const_zero] using (map_sum (blockDiagonalHom (ℋ := ℋ))
     (fun i ↦ (A i, (0 : ℋ →L[ℂ] ℋ))) Finset.univ).symm
+
 
 omit [Nontrivial ℋ] in
 private lemma interval_zero_spectrum {I : Set ℝ} (h0 : 0 ∈ I) :
@@ -665,6 +677,7 @@ private lemma jensen_fin_of_binary_interval {I : Set ℝ} {f : ℝ → ℝ}
         hcfc _ _ hsum.1 (by simp) hsum.2 (interval_zero_spectrum h0)] at h
       exact blockDiagonal_le_left h
 
+
 /-- Finite block packing is independent of the proof of binary Jensen. -/
 theorem jensenFinite_of_binary_interval {ι : Type v} [Fintype ι]
     {I : Set ℝ} {f : ℝ → ℝ} (hI : I.OrdConnected) (h0 : 0 ∈ I)
@@ -696,30 +709,42 @@ theorem jensenFinite_of_opConvexOnAll_continuous {ι : Type v} [Fintype ι]
 /-- Finite contractive Jensen on a general interval. Continuity is assumed only at the
 endpoints of `I` that belong to `I`; interior continuity is derived from operator
 convexity, and open intervals need no continuity assumption
-(`jensenFinite_of_opConvexOnAll_of_isOpen`).
-Endpoint continuity is an explicit hypothesis of this theorem. -/
+(`jensenFinite_of_opConvexOnAll_of_isOpen`). Whether the endpoint hypothesis itself
+follows from uniform operator convexity is left open. -/
 theorem jensenFinite_of_opConvexOnAll_of_endpoints {ι : Type v} [Fintype ι]
     {I : Set ℝ} (hI : I.OrdConnected) (h0 : 0 ∈ I)
     {f : ℝ → ℝ} (hf : OperatorConvexOnAll.{u} I f) (hf0 : f 0 ≤ 0)
     (he : ∀ x ∈ I \ interior I, ContinuousWithinAt f I x)
-    (A X : ι → QuantumState.B ℋ) (hA : ∀ i, IsSelfAdjoint (A i))
+    (A X : ι → ℋ →L[ℂ] ℋ) (hA : ∀ i, IsSelfAdjoint (A i))
     (hAs : ∀ i, spectrum ℝ (A i) ⊆ I) (hX : ∑ i, star (X i) * X i ≤ 1) :
     cfcR f (∑ i, star (X i) * A i * X i) ≤
       ∑ i, star (X i) * cfcR f (A i) * X i := by
   exact jensenFinite_of_opConvexOnAll_continuous hI h0 (@hf)
     (continuousOn_of_interior_and_endpoints
-      (continuousOn_interior_of_operatorConvexOnAll (ℋ := ℋ) hI (@hf)) he)
+      (operatorConvexOnAll_continuousOn_interior (ℋ := ℋ) hI (@hf)) he)
     hf0 A X hA hAs hX
 
 /-- Open intervals need no explicit continuity assumption. -/
 theorem jensenFinite_of_opConvexOnAll_of_isOpen {ι : Type v} [Fintype ι]
     {I : Set ℝ} (hI : I.OrdConnected) (hopen : IsOpen I) (h0 : 0 ∈ I)
     {f : ℝ → ℝ} (hf : OperatorConvexOnAll.{u} I f) (hf0 : f 0 ≤ 0)
-    (A X : ι → QuantumState.B ℋ) (hA : ∀ i, IsSelfAdjoint (A i))
+    (A X : ι → ℋ →L[ℂ] ℋ) (hA : ∀ i, IsSelfAdjoint (A i))
     (hAs : ∀ i, spectrum ℝ (A i) ⊆ I) (hX : ∑ i, star (X i) * X i ≤ 1) :
     cfcR f (∑ i, star (X i) * A i * X i) ≤
       ∑ i, star (X i) * cfcR f (A i) * X i := by
   exact jensenFinite_of_opConvexOnAll_of_endpoints hI h0 (@hf) hf0
     (by simp [hopen.interior_eq]) A X hA hAs hX
+
+/-- The existing continuous half-line interface is a specialization of the new interval theorem.
+The original theorem `jensenFinite_of_opConvexIciAll` is unchanged. -/
+theorem jensenFinite_ici_via_interval {ι : Type v} [Fintype ι]
+    {f : ℝ → ℝ} (hf : OperatorConvexIciAllContNonposAtZero.{u} f)
+    (A X : ι → ℋ →L[ℂ] ℋ) (hA : ∀ i, IsSelfAdjoint (A i))
+    (hAs : ∀ i, spectrum ℝ (A i) ⊆ Set.Ici (0 : ℝ))
+    (hX : ∑ i, star (X i) * X i ≤ 1) :
+    cfcR f (∑ i, star (X i) * A i * X i) ≤
+      ∑ i, star (X i) * cfcR f (A i) * X i := by
+  exact jensenFinite_of_opConvexOnAll_of_endpoints (I := Set.Ici (0 : ℝ))
+    Set.ordConnected_Ici (by simp) (@hf.1) hf.2.2 (fun x hx ↦ hf.2.1 x hx.1) A X hA hAs hX
 
 end JensenOperatorInequality

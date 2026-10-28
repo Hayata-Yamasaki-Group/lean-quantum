@@ -1,4 +1,7 @@
-import Quantum.TraceInequality.JensenOperatorInequality
+import Quantum.TraceInequality.LiebAndo.JensenOperatorInequality
+import Quantum.TraceInequality.JensenOperatorInequalityRetained
+import Quantum.TraceInequality.HansenPedersen.LownerHeinzTheorem
+import Quantum.TraceInequality.LownerHeinz.ReciprocalRetained
 
 /-!
 Finite contractive-column Jensen on the nonnegative half-line.
@@ -147,7 +150,7 @@ The finite index type has an independent universe `v`.
 -/
 theorem jensenFinite_of_opConvexIciAll {ι : Type v} [Fintype ι]
     {f : ℝ → ℝ} (hf : OperatorConvexIciAllContNonposAtZero.{u} f)
-    (A X : ι → QuantumState.B ℋ)
+    (A X : ι → ℋ →L[ℂ] ℋ)
     (hA : ∀ i, IsSelfAdjoint (A i))
     (hAs : ∀ i, spectrum ℝ (A i) ⊆ Set.Ici (0 : ℝ))
     (hX : ∑ i, star (X i) * X i ≤ 1) :

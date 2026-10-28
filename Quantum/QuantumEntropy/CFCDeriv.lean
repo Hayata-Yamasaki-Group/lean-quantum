@@ -10,7 +10,8 @@ import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Bas
 /-!
 # Differentiation of operator powers in the exponent (CFC)
 
-Infrastructure for the `α → 1` limit of the sandwiched Rényi divergence.
+Infrastructure for the `α → 1` limit of the sandwiched Rényi divergence
+(`SandwichedRenyiUmegaki`).
 
 The key obstacle there is differentiating continuous-functional-calculus
 expressions, for which Mathlib has no dedicated API. This file provides the one
@@ -45,18 +46,13 @@ lemma rpow_eq_normedSpace_exp_smul_log {a : B ℋ} (ha : IsStrictlyPositive a) (
     CFC.rpow a s = NormedSpace.exp (s • CFC.log a) := by
   have hclog : ContinuousOn Real.log (spectrum ℝ a) :=
     fun x hx => (Real.continuousAt_log (ne_of_gt (ha.spectrum_pos hx))).continuousWithinAt
-  have hcg : ContinuousOn (fun x : ℝ => s * Real.log x) (spectrum ℝ a) :=
-    continuousOn_const.mul hclog
-  rw [← CFC.real_exp_eq_normedSpace_exp (a := s • CFC.log a)]
-  have h1 : s • CFC.log a = cfc (fun x : ℝ => s * Real.log x) a := by
-    rw [CFC.log, ← cfc_smul s Real.log a hclog]; simp only [smul_eq_mul]
-  rw [h1, ← cfc_comp Real.exp (fun x : ℝ => s * Real.log x) a (hf := hcg)]
-  rw [show CFC.rpow a s = cfc (fun x : ℝ => x ^ s) a from CFC.rpow_eq_cfc_real]
-  apply cfc_congr
-  intro x hx
-  have hxpos : 0 < x := ha.spectrum_pos hx
-  simp only [Function.comp_apply]
-  rw [Real.rpow_def_of_pos hxpos s, mul_comm]
+  rw [CFC.rpow_eq_pow, CFC.rpow_eq_cfc_real ha.nonneg, CFC.log,
+    ← cfc_const_mul s Real.log a hclog,
+    ← CFC.real_exp_eq_normedSpace_exp (cfc_predicate _ a),
+    ← cfc_comp' Real.exp (fun x => s * Real.log x) a Real.continuous_exp.continuousOn
+      (continuousOn_const.mul hclog) (IsSelfAdjoint.of_nonneg ha.nonneg)]
+  exact cfc_congr fun x hx => by
+    rw [Real.rpow_def_of_pos (ha.spectrum_pos hx), mul_comm]
 
 /-- **Fixed-base exponent derivative.** For a strictly positive `a : ℋ →L[ℂ] ℋ`, the
     operator power `s ↦ a ^ s` is differentiable in the exponent with

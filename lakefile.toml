@@ -1,10 +1,10 @@
 name = "Quantum"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["Quantum", "Paper1Solution"]
+defaultTargets = ["Quantum"]
 
 [leanOptions]
-pp.unicode.fun = true
+pp.unicode.fun = true # pretty-prints `fun a ↦ b`
 relaxedAutoImplicit = false
 weak.linter.mathlibStandardSet = true
 maxSynthPendingDepth = 3
@@ -13,22 +13,34 @@ maxSynthPendingDepth = 3
 name = "mathlib"
 scope = "leanprover-community"
 
-[[require]]
-name = "Comparator"
-scope = "leanprover"
-git = "https://github.com/leanprover/comparator.git"
-rev = "v4.29.0-rc6"
-
 [[lean_lib]]
 name = "Quantum"
-roots = ["Quantum"]
+roots = ["Quantum", "QuantumFrontier"]
+globs = ["Quantum.*", "QuantumFrontier"]
 
 [[lean_lib]]
-name = "Paper1Solution"
-roots = ["ComparatorChallenges.Paper1Solution"]
+name = "ComparatorChallenges"
+roots = [
+  "ComparatorChallenges.Challenge",
+  "ComparatorChallenges.GslChallenge",
+  "ComparatorChallenges.GslSolution",
+  "ComparatorChallenges.GslSolutionAxiom",
+  "ComparatorChallenges.GslSolutionWeak",
+  "ComparatorChallenges.Paper1",
+  "ComparatorChallenges.Paper1Claims",
+  "ComparatorChallenges.Paper1Solution",
+  "ComparatorChallenges.Paper2",
+  "ComparatorChallenges.Paper2Claims",
+  "ComparatorChallenges.Paper2Solution",
+  "ComparatorChallenges.Paper2SolutionWeak",
+  "ComparatorChallenges.Paper2SolutionAxiom",
+  "ComparatorChallenges.Paper2Headline",
+  "ComparatorChallenges.Solution",
+  "ComparatorChallenges.SolutionLoewner",
+]
 
-# Challenge is a statement-only comparator fixture containing the original sorry placeholders.
-# Build it separately; it shares declaration names with Paper1Solution.
+# Route-independence audit (assert_not_imported); not a default target.
+# Build with `lake --wfail build RouteAudit`.
 [[lean_lib]]
-name = "Paper1Challenge"
-roots = ["ComparatorChallenges.Paper1"]
+name = "RouteAudit"
+roots = ["RouteAudit.Default"]

@@ -1,35 +1,14 @@
-import Quantum.QuantumEntropy.SandwichedRenyi.Umegaki.AlphaOneLinear
-
-import Quantum.QuantumEntropy.CFCTransport
-
-section EigenvectorTransport
-open QuantumState
-
-private lemma rpow_apply_eigenvector_clm_support {ℋ : Type*} [Qudit ℋ]
-    (T : B ℋ) (hT : 0 ≤ T) (p : ℝ) (v : ℋ) (μ : ℝ)
-    (hv : T v = (algebraMap ℝ ℂ μ) • v) (hμ : μ ∈ spectrum ℝ T) :
-    CFC.rpow T p v = (algebraMap ℝ ℂ (μ ^ p)) • v := by
-  letI : IsScalarTower ℝ ℂ (B ℋ) := RestrictScalars.isScalarTower ℝ ℂ (B ℋ)
-  letI : IsScalarTower ℝ ℂ (L ℋ) := RestrictScalars.isScalarTower ℝ ℂ (L ℋ)
-  have hμL : μ ∈ spectrum ℝ (T : L ℋ) := by
-    rw [← spectrum.preimage_algebraMap ℂ (R := ℝ)] at hμ ⊢
-    simpa only [ContinuousLinearMap.spectrum_eq] using hμ
-  have hp := congrArg (fun A : B ℋ => A v)
-    (CFCTransport.cfc_rpow_toCLM (T : L ℋ) p)
-  change CFC.rpow (T : L ℋ) p v = CFC.rpow T p v at hp
-  rw [← hp]
-  exact TensorCFC.rpow_apply_eigenvector_linear (T : L ℋ)
-    ((ContinuousLinearMap.coe_le_coe_iff _ _).mpr hT) p v μ hv hμL
-
-end EigenvectorTransport
+import Quantum.QuantumEntropy.SandwichedRenyiBase.Umegaki.AlphaOne
+import Quantum.QuantumEntropy.Common.TraceReGeneralizedStein
+import Quantum.QuantumEntropy.RenyiDPI.Sandwiched.LiebAndo.NonNeg.Continuity
+import Quantum.QuantumEntropy.UmegakiDPI.AlphaOneCore
 
 /-!
 # Support-domain alpha-one proof leaves
 
-Source: arXiv:2607.05492v1, Section 1.5; Müller-Lennert et al. (2013), alpha-one analysis.
-This module proves derivative and compression lemmas for the support domain.
-The general limit is proved in AlphaOneSupportLimit.lean as
-`tendsto_sandwichedRenyiDiv_umegakiNorm_of_supportLE`.
+Source: main.tex:219; Müller-Lennert et al. (2013), alpha-one analysis.
+This module supplies lemmas for the singular-input extension.
+The general support-domain limit is proved in `AlphaOneSupportLimit`.
 -/
 
 open QuantumState QuantumChannel GeneralizedPerspectiveFunction
@@ -51,7 +30,7 @@ lemma hasDerivAt_scalar_rpow {x s : ℝ} (hx : 0 ≤ x) (hs : 0 < s) :
     exact Real.zero_rpow (ne_of_gt ht)
   · exact (Real.hasStrictDerivAt_const_rpow hx s).hasDerivAt
 
-/-- The fixed-base trace-power derivative for a possibly singular PSD operator. -/
+/-- C03: the fixed-base trace-power derivative for a possibly singular PSD operator. -/
 lemma hasDerivAt_trace_rpow_of_nonneg {K : B H} (hK : 0 ≤ K) {s : ℝ} (hs : 0 < s) :
     HasDerivAt (fun t : ℝ => (Tr ((CFC.rpow K t : B H) : L H)).re)
       (Tr ((CFC.rpow K s * CFC.log K : B H) : L H)).re s := by
@@ -63,7 +42,7 @@ lemma hasDerivAt_trace_rpow_of_nonneg {K : B H} (hK : 0 ≤ K) {s : ℝ} (hs : 0
     hpos.isSymmetric.apply_eigenvectorBasis rfl i
   have hnn (i) : 0 ≤ eig i := hpos.toLinearMap.nonneg_eigenvalues rfl i
   have hpow (t : ℝ) (i) : CFC.rpow K t (b i) = ((eig i ^ t : ℝ) : ℂ) • b i :=
-    rpow_apply_eigenvector_clm_support K hK t (b i) (eig i) (heig i)
+    TensorCFC.rpow_apply_eigenvector K hK t (b i) (eig i) (heig i)
       (TensorCFC.mem_spectrum_real_of_eigenvector (b.orthonormal.ne_zero i) (heig i))
   have hlog (i) : CFC.log K (b i) = ((Real.log (eig i) : ℝ) : ℂ) • b i :=
     TensorCFC.cfc_real_apply_eigenvector (IsSelfAdjoint.of_nonneg hK) Real.log (heig i)
@@ -104,7 +83,7 @@ lemma quasi_re_ne_zero_of_support {ρ σ : L H} (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 
   have hpow (i) : P (b i) = ((eig i ^ β : ℝ) : ℂ) • b i := by
     change (CFC.rpow σ β).toContinuousLinearMap (b i) = _
     rw [CFCTransport.cfc_rpow_toCLM]
-    exact rpow_apply_eigenvector_clm_support σ.toContinuousLinearMap hσ β (b i) (eig i)
+    exact TensorCFC.rpow_apply_eigenvector σ.toContinuousLinearMap hσ β (b i) (eig i)
       (heig i) (TensorCFC.mem_spectrum_real_of_eigenvector
         (b.orthonormal.ne_zero i) (heig i))
   have hkill (i) : ρ (b i) = 0 := by
@@ -136,7 +115,7 @@ lemma nn_eq_real_of_support {ρ σ : L H} (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 0)
   simp only [sandwichedRenyiDivNN, hsupp, not_true_eq_false, and_false, hQ,
     false_or, if_false]
 
-/-- Equality holds on a two-sided punctured neighborhood, including alpha > 1. -/
+/-- C07: equality holds on a two-sided punctured neighborhood, including alpha > 1. -/
 lemma nn_eventually_eq_real_of_support {ρ σ : L H} (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 0)
     (hσ : 0 ≤ σ) (hsupp : SupportLE ρ σ) :
     ∀ᶠ α : ℝ in 𝓝[≠] (1 : ℝ),
@@ -145,7 +124,7 @@ lemma nn_eventually_eq_real_of_support {ρ σ : L H} (hρ : 0 ≤ ρ) (hρ0 : ρ
     nhdsWithin_le_nhds] with α hα
   exact nn_eq_real_of_support hρ hρ0 hσ hsupp hα
 
-/-- Turn the explicit log derivative into the two-sided punctured limit. -/
+/-- C08: turn the explicit log derivative into the two-sided punctured limit. -/
 lemma tendsto_of_log_derivative {ρ σ : L H} (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 0)
     (hσ : 0 ≤ σ)
     (hd : HasDerivAt (fun α => Real.log (sandwichedQuasi α ρ σ).re)
@@ -236,7 +215,7 @@ lemma compress_nonneg {ρ σ : L H} (hρ : 0 ≤ ρ) : 0 ≤ compress σ ρ := b
     rw [Submodule.inner_orthogonalProjection_eq_of_mem_right]
     exact hp.2 x
 
-/-- The sigma corner is nontrivial and PD; rho stays nonzero PSD. -/
+/-- C01: the sigma corner is nontrivial and PD; rho stays nonzero PSD. -/
 lemma compression_domain {ρ σ : L H} (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 0)
     (hσ : 0 ≤ σ) (hsupp : SupportLE ρ σ) :
     ∃ hS : Nontrivial (supportSpace σ),
@@ -307,7 +286,8 @@ lemma lift_compress_of_range_ker {A σ : L H}
   exact apply_starProjection hker x
 
 /-- The Umegaki logarithmic product has no contribution on the discarded kernel.
-This is an operator identity, prior to the remaining CFC transport inside the corner. -/
+This is an operator identity; the CFC transport inside the corner is
+`compress_umegaki_product` in `AlphaOneSupportCompression.lean`. -/
 lemma umegaki_product_eq_lift_compress {ρ σ : L H} (hρ : 0 ≤ ρ) (hσ : 0 ≤ σ)
     (hsupp : SupportLE ρ σ) :
     ρ * (CFC.log ρ - CFC.log σ) =
@@ -320,6 +300,8 @@ lemma umegaki_product_eq_lift_compress {ρ σ : L H} (hρ : 0 ≤ ρ) (hσ : 0 �
     change ρ (CFC.log ρ x - CFC.log σ x) = 0
     rw [log_apply_eq_zero_of_mem_ker hρ (hsupp hx), log_apply_eq_zero_of_mem_ker hσ hx,
       sub_self, map_zero]
+
+
 
 end AlphaOneSupport
 end SandwichedRenyiRelativeEntropy

@@ -5,11 +5,13 @@ Authors: Hayata Yamasaki
 -/
 
 import Quantum.TraceInequality.LownerHeinz.NegPow
+import Quantum.TraceInequality.TraceFunctionMonotonicity.LownerHeinz.Defs
+import Quantum.TraceInequality.TraceFunctionMonotonicity.LownerHeinz.RpowZeroOne
 
 /-!
 # Logarithm limits and convexity
 
-This file is part of the split `LownerHeinzCore` development.
+
 -/
 
 namespace LownerHeinzCore
@@ -30,27 +32,27 @@ variable [NonnegSpectrumClass ℝ 𝓐]
 open scoped Topology in
 open Real Filter in
 open Set in
-/-- Locally uniform normalized-power approximation of the logarithm
-(Carlen 2010, proof of Theorem 2.6, first limit in formula (2.8))
-
-On the positive half-line, the scalar functions
-$(p,x)\mapsto p^{-1}(x^p-1)$ converge locally uniformly to $\log x$ as $p\downarrow 0$.
-The locally uniform strengthening is on the Lean side; the source gives only the matrix limit.
-
-Proof: For a compact set $K\subset(0,\infty)$, the quantities
-$\lVert\log x\rVert$ and $\lVert\log x\rVert^2$ are bounded on $K$.  Choose $p>0$ small
-enough that $p$ is below both the reciprocal logarithmic bound and the $\varepsilon$-scaled
-quadratic bound.  The scalar estimate
-\[
-  \left|p^{-1}(x^p-1)-\log x\right|\le p\,|\log x|^2
-\]
-follows from $x^p=\exp(p\log x)$ and the second-order bound for $\exp(y)-1-y$ when
-$|y|\le 1$.  The chosen bounds make the right-hand side uniformly at most
-$\varepsilon$ on $K$, proving locally uniform convergence.
+/-- The logarithm is the locally uniform right-limit of the normalized powers.
 
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence as an auxiliary lemma used
 in the proof of this result. -/
+/- Locally uniform normalized-power approximation of the logarithm
+    (Carlen 2009, proof of Theorem 2.6, first limit in formula (2.8)) -/
+/- On the positive half-line, the scalar functions
+    $(p,x)\mapsto p^{-1}(x^p-1)$ converge locally uniformly to $\log x$ as $p\downarrow 0$.
+    The locally uniform strengthening is on the Lean side; the source gives only the matrix
+    limit. -/
+/- For a compact set $K\subset(0,\infty)$, the quantities
+    $\lVert\log x\rVert$ and $\lVert\log x\rVert^2$ are bounded on $K$. Choose $p>0$ small
+    enough that $p$ is below both the reciprocal logarithmic bound and the $\varepsilon$-scaled
+    quadratic bound. The scalar estimate
+    \[
+      \left|p^{-1}(x^p-1)-\log x\right|\le p\,|\log x|^2
+    \]
+    follows from $x^p=\exp(p\log x)$ and the second-order bound for $\exp(y)-1-y$ when
+    $|y|\le 1$. The chosen bounds make the right-hand side uniformly at most
+    $\varepsilon$ on $K$, proving locally uniform convergence. -/
 private lemma real_tendstoLocallyUniformlyOn_rpow_sub_one_log :
     TendstoLocallyUniformlyOn (fun (p : ℝ) (x : ℝ) => p⁻¹ * (x ^ p - 1)) log
       (𝓝[>] 0) (Ioi 0) := by
@@ -115,22 +117,21 @@ omit [PartialOrder 𝓐] [StarOrderedRing 𝓐] [Nontrivial 𝓐] [NonnegSpectru
 open scoped Topology in
 open Filter in
 open Set in
-/-- Continuous-functional-calculus convergence of normalized powers to the logarithm
-(Carlen 2010, proof of Theorem 2.6, first limit in formula (2.8))
-
-If the real spectrum of $X$ is contained in $(0,\infty)$, then
-$p^{-1}(X^p-I)$, interpreted by continuous functional calculus, converges to $\log X$ as
-$p\downarrow 0$.
-
-Proof: Apply the scalar locally uniform convergence of
-`real_tendstoLocallyUniformlyOn_rpow_sub_one_log` to the compact spectrum of $X$, using the
-assumed inclusion in $(0,\infty)$.  The continuous functional calculus is continuous under
-uniform convergence on the spectrum, and for all sufficiently small positive $p$ the scalar
-approximants are continuous there.
+/-- Functional-calculus convergence of normalized powers to logarithm on positive spectrum.
 
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence as an auxiliary lemma used
 in the proof of this result. -/
+/- Continuous-functional-calculus convergence of normalized powers to the logarithm
+    (Carlen 2009, proof of Theorem 2.6, first limit in formula (2.8)) -/
+/- If the real spectrum of $X$ is contained in $(0,\infty)$, then
+    $p^{-1}(X^p-I)$, interpreted by continuous functional calculus, converges to $\log X$ as
+    $p\downarrow 0$. -/
+/- Apply the scalar locally uniform convergence of
+    the private lemma `real_tendstoLocallyUniformlyOn_rpow_sub_one_log` to the compact spectrum of
+    $X$, using the assumed inclusion in $(0,\infty)$. The continuous functional calculus is
+    continuous under uniform convergence on the spectrum, and for all sufficiently small positive
+    $p$ the scalar approximants are continuous there. -/
 private lemma tendsto_cfcR_rpow_sub_one_log {X : 𝓐}
     (Xs : spectrum ℝ X ⊆ Set.Ioi (0 : ℝ)) :
     Tendsto (fun p : ℝ => cfcR (fun x : ℝ => p⁻¹ * (x ^ p - 1)) X) (𝓝[>] 0)
@@ -145,32 +146,32 @@ private lemma tendsto_cfcR_rpow_sub_one_log {X : 𝓐}
     filter_upwards [hsmall] with p hp
     fun_prop (disch := grind)
 
-/-- Logarithm operator monotonicity
-(Carlen 2010, Theorem 2.6, final clause; proof using the first limit in formula (2.8))
-
-The function
-$f(t)=\log(t)$ is operator monotone on $(0,\infty)$.
-\emph{Lean deviation}: stated as $x \mapsto \log x$ operator monotone on
-$(0,\infty)$ in the sense of `OperatorMonotoneOn`, over a fixed unital
-$C^*$-algebra rather than matrices.
-
-Proof: Let $B\le A$ be self-adjoint elements whose spectra are contained in
-$(0,\infty)$.  For every $0<p<1$, `power_Icc_zero_one_operatorMonotoneOn_Ici` applies on
-$[0,\infty)$ after restricting the two spectra from $(0,\infty)$ to $[0,\infty)$, giving
-$B^p\le A^p$ by continuous functional calculus.  Subtracting $I$ and multiplying by the
-positive scalar $p^{-1}$ preserves the order, so
-\[
-  p^{-1}(B^p-I)\le p^{-1}(A^p-I).
-\]
-The algebraic form of these two sides is exactly the continuous functional calculus of
-$x\mapsto p^{-1}(x^p-1)$.  By `tendsto_cfcR_rpow_sub_one_log`, these two approximants converge
-respectively to $\log(B)$ and $\log(A)$ as $p\downarrow0$.  Since the order relation in a
-$C^*$-algebra is closed, passing to the limit gives $\log(B)\le\log(A)$, which is precisely
-operator monotonicity on $(0,\infty)$.
+/-- `x ↦ log x` is operator monotone on `(0, ∞)`.
 
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence to the logarithm result
 using the normalized limit of powers. -/
+/- Logarithm operator monotonicity
+    (Carlen 2009, Theorem 2.6, final clause; proof using the first limit in formula (2.8)) -/
+/- (Carlen 2009, Theorem 2.6, final clause; proof using the first limit in formula (2.8)) The
+    function $f(t)=\log(t)$ is operator monotone on $(0,\infty)$.
+    *Lean deviation*: stated as $x \mapsto \log x$ operator monotone on
+    $(0,\infty)$ in the sense of the definition of `OperatorMonotoneOn`, over a fixed unital
+    $C^*$-algebra rather than matrices. -/
+/- Let $B\le A$ be self-adjoint elements whose spectra are contained in
+    $(0,\infty)$. For every $0<p<1$, the Löwner–Heinz theorem
+    (`power_Icc_zero_one_operatorMonotoneOn_Ici`) applies on $[0,\infty)$ after restricting the two
+    spectra from $(0,\infty)$ to $[0,\infty)$, giving $B^p\le A^p$ by continuous functional
+    calculus. Subtracting $I$ and multiplying by the positive scalar $p^{-1}$ preserves the order,
+    so
+    \[
+      p^{-1}(B^p-I)\le p^{-1}(A^p-I).
+    \]
+    The algebraic form of these two sides is exactly the continuous functional calculus of
+    $x\mapsto p^{-1}(x^p-1)$. By the private CFC convergence lemma `tendsto_cfcR_rpow_sub_one_log`,
+    these two approximants converge respectively to $\log(B)$ and $\log(A)$ as $p\downarrow0$. Since
+    the order relation in a $C^*$-algebra is closed, passing to the limit gives $\log(B)\le\log(A)$,
+    which is precisely operator monotonicity on $(0,\infty)$. -/
 theorem log_operatorMonotoneOn_Ioi :
     OperatorMonotoneOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x : ℝ ↦ Real.log x) := by
   dsimp [OperatorMonotoneOn]
@@ -241,21 +242,20 @@ theorem cfcR_log_le_cfcR_log_of_le {A B : 𝓐}
 /-! ### Concavity of the logarithm -/
 
 omit [PartialOrder 𝓐] [StarOrderedRing 𝓐] [Nontrivial 𝓐] [NonnegSpectrumClass ℝ 𝓐] in
-/-- Continuous-functional-calculus identity for normalized powers
-
-For a self-adjoint element $X$ and $0<p$, the continuous functional
-calculus of $x\mapsto p^{-1}(x^p-1)$ is
-$p^{-1}$ times the difference between the functional calculus of $x\mapsto x^p$ and the
-identity element.
-
-Proof: The continuous functional calculus is compatible with multiplication by a
-real scalar and with subtraction.  Pull the scalar $p^{-1}$ outside the calculus, split
-$x^p-1$ as the difference of $x^p$ and the constant function $1$, and evaluate the latter
-by the constant-one rule.
+/-- Algebraic CFC form of the normalized power approximant.
 
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence as an auxiliary lemma used
 in the proof of this result. -/
+/- Continuous-functional-calculus identity for normalized powers -/
+/- For a self-adjoint element $X$ and $0<p$, the continuous functional
+    calculus of $x\mapsto p^{-1}(x^p-1)$ is
+    $p^{-1}$ times the difference between the functional calculus of $x\mapsto x^p$ and the
+    identity element. -/
+/- The continuous functional calculus is compatible with multiplication by a
+    real scalar and with subtraction. Pull the scalar $p^{-1}$ outside the calculus, split
+    $x^p-1$ as the difference of $x^p$ and the constant function $1$, and evaluate the latter
+    by the constant-one rule. -/
 private lemma cfcR_rpow_sub_one_scaled {X : 𝓐} {p : ℝ} (hp : 0 < p)
     (hX : IsSelfAdjoint X) :
     cfcR (fun x : ℝ ↦ p⁻¹ * (x ^ p - 1)) X =
@@ -277,23 +277,22 @@ private lemma cfcR_rpow_sub_one_scaled {X : 𝓐} {p : ℝ} (hp : 0 < p)
             (hg := by fun_prop)]
           rw [cfc_const_one (R := ℝ) (A := 𝓐) (p := IsSelfAdjoint) X hX]
 
-/-- Operator concavity of normalized-power approximants
-(Carlen 2010, proof of Theorem 2.6, immediately after formula (2.8))
-
-For every $0<p<1$, the function
-$x\mapsto p^{-1}(x^p-1)$ is operator concave on $(0,\infty)$.
-
-Proof: Restrict the concavity of $x\mapsto x^p$ from
-`operatorConcaveOn_rpow_Ici` to the positive interval.  For a fixed convex-combination
-comparison, this gives
-$(1-u)A^p+uB^p\le ((1-u)A+uB)^p$ in continuous functional calculus.  Subtracting the
-identity from both sides and multiplying by the nonnegative scalar $p^{-1}$ preserves the
-order; `cfcR_rpow_sub_one_scaled` identifies these three terms with the functional
-calculus of $x\mapsto p^{-1}(x^p-1)$.
+/-- The normalized power approximants to logarithm are operator concave.
 
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence as an auxiliary lemma used
 in the proof of this result. -/
+/- Operator concavity of normalized-power approximants
+    (Carlen 2009, proof of Theorem 2.6, immediately after formula (2.8)) -/
+/- For every $0<p<1$, the function
+    $x\mapsto p^{-1}(x^p-1)$ is operator concave on $(0,\infty)$. -/
+/- Restrict the concavity of $x\mapsto x^p$ from
+    the power-concavity theorem `power_Icc_zero_one_operatorConcaveOn_Ici` to the positive interval.
+    For a fixed convex-combination comparison, this gives $(1-u)A^p+uB^p\le ((1-u)A+uB)^p$ in
+    continuous functional calculus. Subtracting the identity from both sides and multiplying by the
+    nonnegative scalar $p^{-1}$ preserves the order; the private CFC identity
+    `cfcR_rpow_sub_one_scaled` identifies these three terms with the functional calculus of
+    $x\mapsto p^{-1}(x^p-1)$. -/
 private lemma rpow_sub_one_scaled_operatorConcaveOn_Ioi (p : ℝ)
     (hp : p ∈ Set.Ioo (0 : ℝ) 1) :
     OperatorConcaveOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ))
@@ -307,7 +306,7 @@ private lemma rpow_sub_one_scaled_operatorConcaveOn_Ioi (p : ℝ)
           u • cfcR (fun x : ℝ ↦ x ^ p) B ≤
         cfcR (fun x : ℝ ↦ x ^ p) C := by
     have hpIcc : p ∈ Set.Icc (0 : ℝ) 1 := ⟨le_of_lt hp.1, le_of_lt hp.2⟩
-    have hconc := operatorConcaveOn_rpow_Ici (𝓐 := 𝓐) p hpIcc
+    have hconc := power_Icc_zero_one_operatorConcaveOn_Ici (𝓐 := 𝓐) p hpIcc
     dsimp [OperatorConcaveOn, OperatorConvexOn] at hconc
     have hneg := hconc (A := A) (B := B) (t := u) hA hB hu0 hu1
       (As.trans Set.Ioi_subset_Ici_self) (Bs.trans Set.Ioi_subset_Ici_self)
@@ -340,35 +339,34 @@ private lemma rpow_sub_one_scaled_operatorConcaveOn_Ioi (p : ℝ)
   simpa [C, cfcR, cfc_neg, smul_neg, neg_add, add_assoc, add_left_comm, add_comm]
     using hneg
 
-/-- Logarithm operator concavity
-(Carlen 2010, Theorem 2.6, final clause; proof using the first limit in formula (2.8))
-
-The function
-$f(t)=\log(t)$ is operator concave on $(0,\infty)$.
-\emph{Lean deviation}: stated as $x \mapsto \log x$ operator concave on
-$(0,\infty)$ in the sense of `OperatorConcaveOn`, over a fixed unital
-$C^*$-algebra rather than matrices.
-
-Proof: Fix self-adjoint $A,B$ with spectra in $(0,\infty)$ and $0\le u\le1$.
-The convex combination $C=(1-u)A+uB$ again has spectrum in $(0,\infty)$.  For every
-$0<p<1$, `rpow_sub_one_scaled_operatorConcaveOn_Ioi` gives
-\[
-  (1-u)p^{-1}(A^p-I)+u p^{-1}(B^p-I)
-    \le p^{-1}(C^p-I).
-\]
-By `tendsto_cfcR_rpow_sub_one_log`, the three normalized power terms converge through
-continuous functional calculus to $\log(A)$, $\log(B)$, and $\log(C)$ as
-$p\downarrow0$.  The order relation is closed under such limits, hence
-\[
-  (1-u)\log(A)+u\log(B)\le \log(C),
-\]
-which is the defining operator-concavity inequality after unfolding
-`OperatorConcaveOn`.
+/-- `x ↦ log x` is operator concave on `(0, ∞)`.
 
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence to the logarithm result
 using the normalized limit of powers. -/
-theorem operatorConcaveOn_log_Ioi :
+/- Logarithm operator concavity
+    (Carlen 2009, Theorem 2.6, final clause; proof using the first limit in formula (2.8)) -/
+/- (Carlen 2009, Theorem 2.6, final clause; proof using the first limit in formula (2.8)) The
+    function $f(t)=\log(t)$ is operator concave on $(0,\infty)$.
+    *Lean deviation*: stated as $x \mapsto \log x$ operator concave on
+    $(0,\infty)$ in the sense of the definition of `OperatorConcaveOn`, over a fixed unital
+    $C^*$-algebra rather than matrices. -/
+/- Fix self-adjoint $A,B$ with spectra in $(0,\infty)$ and $0\le u\le1$.
+    The convex combination $C=(1-u)A+uB$ again has spectrum in $(0,\infty)$. For every
+    $0<p<1$, the private lemma `rpow_sub_one_scaled_operatorConcaveOn_Ioi` gives
+    \[
+      (1-u)p^{-1}(A^p-I)+u p^{-1}(B^p-I)
+        \le p^{-1}(C^p-I).
+    \]
+    By the private CFC convergence lemma `tendsto_cfcR_rpow_sub_one_log`, the three normalized power
+    terms converge through continuous functional calculus to $\log(A)$, $\log(B)$, and $\log(C)$ as
+    $p\downarrow0$. The order relation is closed under such limits, hence
+    \[
+      (1-u)\log(A)+u\log(B)\le \log(C),
+    \]
+    which is the defining operator-concavity inequality after unfolding
+    the definition of `OperatorConcaveOn`. -/
+theorem log_operatorConcaveOn_Ioi :
     OperatorConcaveOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x : ℝ ↦ Real.log x) := by
   dsimp [OperatorConcaveOn, OperatorConvexOn]
   intro A B u hA hB hu0 hu1 As Bs
@@ -397,27 +395,27 @@ theorem operatorConcaveOn_log_Ioi :
 
 /-! ### Convexity of x log x -/
 
-/-- Operator convexity of normalized power differences
-(Carlen 2010, proof of Theorem 2.6, immediately after formula (2.8), with p=1+q)
-
-For $-1<q<1$ and $q\ne0$, the normalized difference
-\[
-  x\mapsto q^{-1}(x^{1+q}-x)
-\]
-is operator convex on $(0,\infty)$.
-
-Proof: Put $p=1+q$.  If $q>0$, then $1<p<2$, so
-`operatorConvexOn_rpow_Ici` gives operator convexity of $x\mapsto x^p$ on
-$[0,\infty)$.  Subtracting the affine map $x\mapsto x$ and multiplying by the positive
-scalar $q^{-1}$ preserves the convexity inequality.  If $q<0$, then $0<p<1$, and
-`operatorConcaveOn_rpow_Ici` gives the opposite inequality for the powers; after subtracting
-the same affine term, multiplication by the negative scalar $q^{-1}$ reverses the order and
-again gives convexity.  The continuous-functional-calculus identities used here are just
-compatibility with scalar multiplication, subtraction, and the identity function.
-
+/- Operator convexity of normalized power differences
+    (Carlen 2009, proof of Theorem 2.6, immediately after formula (2.8), with p=1+q) -/
+/- For $-1<q<1$ and $q\ne0$, the normalized difference
+    \[
+      x\mapsto q^{-1}(x^{1+q}-x)
+    \]
+    is operator convex on $(0,\infty)$. -/
+/- Put $p=1+q$.  If $q>0$, then $1<p<2$, so
+    the power-convexity theorem `power_Icc_one_two_operatorConvexOn_Ici` gives operator convexity of
+    $x\mapsto x^p$ on $[0,\infty)$.  Subtracting the affine map $x\mapsto x$ and multiplying by the
+    positive scalar $q^{-1}$ preserves the convexity inequality.  If $q<0$, then $0<p<1$, and the
+    power-concavity theorem `power_Icc_zero_one_operatorConcaveOn_Ici` gives the opposite inequality
+    for the powers; after subtracting the same affine term, multiplication by the negative scalar
+    $q^{-1}$ reverses the order and again gives convexity.  The continuous-functional-calculus
+    identities used here are just compatibility with scalar multiplication, subtraction, and the
+    identity function. -/
+/--
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence as an auxiliary lemma used
-in the proof of this result. -/
+in the proof of this result.
+-/
 private lemma rpow_one_add_sub_id_scaled_operatorConvexOn_Ioi (q : ℝ)
     (hq : q ∈ Set.Ioo (-1 : ℝ) 1) (hq0 : q ≠ 0) :
     OperatorConvexOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ))
@@ -450,7 +448,7 @@ private lemma rpow_one_add_sub_id_scaled_operatorConvexOn_Ioi (q : ℝ)
             ((1 - u) • cfcR (fun x : ℝ ↦ x ^ p) A +
               u • cfcR (fun x : ℝ ↦ x ^ p) B) - C :=
           sub_le_sub_right
-            ((operatorConvexOn_rpow_Ici (𝓐 := 𝓐) p
+            ((power_Icc_one_two_operatorConvexOn_Ici (𝓐 := 𝓐) p
               ⟨by dsimp [p]; linarith, by dsimp [p]; linarith [hq.2]⟩)
               hA hB hu0 hu1 (As.trans Set.Ioi_subset_Ici_self)
                 (Bs.trans Set.Ioi_subset_Ici_self)) C
@@ -466,7 +464,7 @@ private lemma rpow_one_add_sub_id_scaled_operatorConvexOn_Ioi (q : ℝ)
         _ ≤ cfcR (fun x : ℝ ↦ x ^ p) C - C := sub_le_sub_right (by
           exact neg_le_neg_iff.mp (by
             simpa [C, cfcR, cfc_neg, smul_neg, neg_add, add_assoc, add_left_comm, add_comm] using
-              (operatorConcaveOn_rpow_Ici (𝓐 := 𝓐) p
+              (power_Icc_zero_one_operatorConcaveOn_Ici (𝓐 := 𝓐) p
                 ⟨by dsimp [p]; linarith [hq.1], by dsimp [p]; linarith⟩)
                 hA hB hu0 hu1 (As.trans Set.Ioi_subset_Ici_self)
                   (Bs.trans Set.Ioi_subset_Ici_self))) C
@@ -482,23 +480,23 @@ private lemma rpow_one_add_sub_id_scaled_operatorConvexOn_Ioi (q : ℝ)
       rw [hcalc A hA, hcalc B hB]
 
 omit [PartialOrder 𝓐] [StarOrderedRing 𝓐] [Nontrivial 𝓐] [NonnegSpectrumClass ℝ 𝓐] in
-/-- Continuous-functional-calculus convergence to $x\log x$
-(Carlen 2010, proof of Theorem 2.6, second limit in formula (2.8), with q=p-1)
-
-If $X$ is self-adjoint and its real spectrum is contained in
-$(0,\infty)$, then the continuous functional calculus of
-$x\mapsto q^{-1}(x^{1+q}-x)$ converges to the continuous functional calculus of
-$x\mapsto x\log x$ as $q\downarrow0$.
-
-Proof: On the spectrum of $X$ one has
-$q^{-1}(x^{1+q}-x)=x\,q^{-1}(x^q-1)$ for $q>0$.  The continuous functional calculus turns
-this product into $X$ times the calculus of $q^{-1}(x^q-1)$.  The latter converges to
-$\log X$ by `tendsto_cfcR_rpow_sub_one_log`; continuity of left multiplication and the CFC
-product rule identify the limit with the calculus of $x\mapsto x\log x$.
-
+/- Continuous-functional-calculus convergence to $x\log x$
+    (Carlen 2009, proof of Theorem 2.6, second limit in formula (2.8), with q=p-1) -/
+/- If $X$ is self-adjoint and its real spectrum is contained in
+    $(0,\infty)$, then the continuous functional calculus of
+    $x\mapsto q^{-1}(x^{1+q}-x)$ converges to the continuous functional calculus of
+    $x\mapsto x\log x$ as $q\downarrow0$. -/
+/- On the spectrum of $X$ one has
+    $q^{-1}(x^{1+q}-x)=x\,q^{-1}(x^q-1)$ for $q>0$.  The continuous functional calculus turns
+    this product into $X$ times the calculus of $q^{-1}(x^q-1)$.  The latter converges to
+    $\log X$ by the private CFC convergence lemma `tendsto_cfcR_rpow_sub_one_log`; continuity of
+    left multiplication and the CFC product rule identify the limit with the calculus of
+    $x\mapsto x\log x$. -/
+/--
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence as an auxiliary lemma used
-in the proof of this result. -/
+in the proof of this result.
+-/
 private lemma tendsto_cfcR_rpow_one_add_sub_id_scaled_mul_log {X : 𝓐}
     (hX : IsSelfAdjoint X) (Xs : spectrum ℝ X ⊆ Set.Ioi (0 : ℝ)) :
     Filter.Tendsto
@@ -547,45 +545,44 @@ private lemma tendsto_cfcR_rpow_one_add_sub_id_scaled_mul_log {X : 𝓐}
   filter_upwards [self_mem_nhdsWithin] with q hq
   exact (hmul_eq q (Set.mem_Ioi.mp hq)).symm
 
-/-- $x\log x$ operator convexity
-(Carlen 2010, Theorem 2.6, final clause; proof using the second limit in formula (2.8))
-
-The function
-$f(t)=t\log(t)$ is operator convex on $(0,\infty)$.
-\emph{Lean deviation}: stated as $x \mapsto x\log x$ operator convex on
-$(0,\infty)$ in the sense of `OperatorConvexOn`, over a fixed unital
-$C^*$-algebra rather than matrices.
-
-Proof: Carlen (2010), proof of Theorem 2.6: for $p\ne 1$ with $0\le p\le 2$ consider
-\[
-  A \mapsto (p-1)^{-1}(A^p-A).
-\]
-If $1<p\le 2$, then $A\mapsto A^p$ is operator convex, so subtracting the affine map
-$A\mapsto A$ and multiplying by the positive scalar $(p-1)^{-1}$ preserves operator
-convexity.  If $0\le p<1$, then $A\mapsto A^p$ is operator concave, hence $A\mapsto A^p-A$ is
-operator concave, and multiplication by the negative scalar $(p-1)^{-1}$ reverses the
-concavity inequality into operator convexity.  For each positive definite $A$, the spectral
-theorem reduces the limiting assertion to the scalar identity
-\[
-  \lim_{p\to 1}\frac{t^p-t}{p-1}=t\log t
-\]
-on the spectrum of $A$; uniformly on the spectra involved in a fixed convexity
-comparison, continuous functional calculus permits passage to the limit.  Since
-operator convexity inequalities are closed under such limits, the limit map
-$A\mapsto A\log(A)$ is operator convex.
-\emph{Lean deviation}: the local convexity node `rpow_one_add_sub_id_scaled_operatorConvexOn_Ioi`
-formalizes the two Carlen branches for the normalized functions
-$q^{-1}(x^{1+q}-x)$, $-1<q<1$, $q\ne0$.  The final limit passage uses the right-hand
-subfamily $q\downarrow0$: `tendsto_cfcR_rpow_one_add_sub_id_scaled_mul_log` rewrites the CFC
-approximant as $X\,q^{-1}(X^q-I)$ and identifies its limit with $X\log X$.
-Applying the closedness of
-the order relation to the convexity inequalities for these approximants yields the displayed
-operator-convexity inequality for $x\mapsto x\log x$.
+/-- `x ↦ x * log x` is operator convex on `(0, ∞)`.
 
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence to the logarithm result
 using the normalized limit of powers. -/
-theorem operatorConvexOn_mul_log_Ioi :
+/- $x\log x$ operator convexity
+    (Carlen 2009, Theorem 2.6, final clause; proof using the second limit in formula (2.8)) -/
+/- (Carlen 2009, Theorem 2.6, final clause; proof using the second limit in formula (2.8)) The
+    function $f(t)=t\log(t)$ is operator convex on $(0,\infty)$.
+    *Lean deviation*: stated as $x \mapsto x\log x$ operator convex on
+    $(0,\infty)$ in the sense of the definition of `OperatorConvexOn`, over a fixed unital
+    $C^*$-algebra rather than matrices. -/
+/- Carlen09 (proof of Theorem 2.6): for $p\ne 1$ with $0\le p\le 2$ consider
+    \[
+      A \mapsto (p-1)^{-1}(A^p-A).
+    \]
+    If $1<p\le 2$, then $A\mapsto A^p$ is operator convex, so subtracting the affine map
+    $A\mapsto A$ and multiplying by the positive scalar $(p-1)^{-1}$ preserves operator
+    convexity. If $0\le p<1$, then $A\mapsto A^p$ is operator concave, hence $A\mapsto A^p-A$ is
+    operator concave, and multiplication by the negative scalar $(p-1)^{-1}$ reverses the
+    concavity inequality into operator convexity. For each positive definite $A$, the spectral
+    theorem reduces the limiting assertion to the scalar identity
+    \[
+      \lim_{p\to 1}\frac{t^p-t}{p-1}=t\log t
+    \]
+    on the spectrum of $A$; uniformly on the spectra involved in a fixed convexity
+    comparison, continuous functional calculus permits passage to the limit. Since
+    operator convexity inequalities are closed under such limits, the limit map
+    $A\mapsto A\log(A)$ is operator convex.
+    *Lean deviation*: the private local convexity lemma
+    `rpow_one_add_sub_id_scaled_operatorConvexOn_Ioi` formalizes the two Carlen branches for the
+    normalized functions $q^{-1}(x^{1+q}-x)$, $-1<q<1$, $q\ne0$. The final limit passage uses the
+    right-hand subfamily $q\downarrow0$: the private CFC convergence lemma
+    `tendsto_cfcR_rpow_one_add_sub_id_scaled_mul_log` rewrites the CFC approximant as
+    $X\,q^{-1}(X^q-I)$ and identifies its limit with $X\log X$. Applying the closedness of the order
+    relation to the convexity inequalities for these approximants yields the displayed
+    operator-convexity inequality for $x\mapsto x\log x$. -/
+theorem mul_log_operatorConvexOn_Ioi :
     OperatorConvexOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x : ℝ ↦ x * Real.log x) := by
   dsimp [OperatorConvexOn]
   intro A B u hA hB hu0 hu1 As Bs

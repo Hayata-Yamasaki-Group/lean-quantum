@@ -6,21 +6,24 @@ Authors: Hayata Yamasaki
 
 import Quantum.TraceInequality.GeneralizedPerspectiveFunction
 import Quantum.QuantumMechanics.QuantumState
+import Mathlib.Analysis.CStarAlgebra.Unitary.Span
+import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.InnerProductSpace.Trace
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
 
 /-!
-Membership in `pdSet` is equivalent to strict positivity.
+The φ-free characterization of `pdSet` membership by strict positivity.
 -/
 
 namespace GeneralizedPerspectiveFunction
 
-open LownerHeinzTheorem
 
 universe u
 
 variable {ℋ : Type u}
 variable [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ] [CompleteSpace ℋ]
 
-/-- Membership in `pdSet` is equivalent to strict positivity. -/
+/-- Identifies `pdSet` membership with strict positivity. -/
 theorem pdSet_membership_certificate (T : (ℋ →L[ℂ] ℋ)) :
     T ∈ pdSet (ℋ := ℋ) ↔ IsStrictlyPositive T := by
   change (IsSelfAdjoint T ∧ spectrum ℝ T ⊆ Set.Ioi 0) ↔ IsStrictlyPositive T

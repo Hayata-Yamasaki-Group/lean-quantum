@@ -5,6 +5,7 @@ Authors: Hayata Yamasaki
 -/
 
 import Quantum.TraceInequality.LownerHeinz.Spectral
+import Quantum.TraceInequality.LownerHeinz.ReciprocalRetained
 
 /-!
 # Löwner-Heinz core aggregate

@@ -17,9 +17,7 @@ universe u
     eigenvectors with zero eigenvalue. Then for any `x`, expanding in the eigenbasis,
     `re ⟨x, ρ x⟩ ≤ ‖ρ‖ · ∑_{i ∈ S} |⟨b i, x⟩|² ≤ (‖ρ‖ / s_min) ·
       re ⟨x, σ x⟩`.
-    Hence `ρ ≤ (‖ρ‖ / s_min + 1) • σ`.
-
-    **Status**: Fully proven. -/
+    Hence `ρ ≤ (‖ρ‖ / s_min + 1) • σ`. -/
 lemma nonneg_le_smul_of_suppLE
     {ℋ : Type u} [Qudit ℋ] [Nontrivial ℋ]
     {ρ σ : L ℋ} (hρ : 0 ≤ ρ) (hσ : 0 ≤ σ)
@@ -223,12 +221,5 @@ lemma nonneg_le_smul_of_suppLE
           exact mul_le_mul_of_nonneg_right h_le h_σ_nn
         linarith
       linarith
-
-@[deprecated (since := "2026-09-05")]
-alias nonneg_apply_eq_zero_of_inner_self_eq_zero :=
-  QuantumChannel.nonneg_apply_eq_zero_of_inner_self_eq_zero
-
-@[deprecated (since := "2026-09-05")]
-alias nonneg_eq_zero_of_le_of_apply_eq_zero := QuantumChannel.nonneg_eq_zero_of_le_of_apply_eq_zero
 
 end SandwichedRenyiRelativeEntropy

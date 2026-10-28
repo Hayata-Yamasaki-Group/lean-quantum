@@ -41,7 +41,7 @@ lemma continuousAt_weighted_cfc {A : ℝ × ℝ → B H}
   exact (continuousOn_cfc_setProd (A := B H) hS).continuousWithinAt
     hmem.self_of_nhds |>.tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨hpair, hmem⟩)
 
-/-- Weighted trace-log joint continuity for singular rho and PD sigma. -/
+/-- C04: weighted trace-log joint continuity for singular rho and PD sigma. -/
 lemma weighted_log_joint_continuity {ρ σ : B H} (hρ : 0 ≤ ρ) (hσ : σ ∈ pdSet) :
     ContinuousAt (fun p : ℝ × ℝ =>
       (Tr ((CFC.rpow (CFC.rpow σ ((1 - p.1) / (2 * p.1)) * ρ *
@@ -67,7 +67,7 @@ lemma weighted_log_joint_continuity {ρ σ : B H} (hρ : 0 ≤ ρ) (hσ : σ ∈
   exact congrArg (fun T : B H => (Tr (T : L H)).re)
     (cfc_weightedScalar_eq (hKnn p.1) hs).symm
 
-/-- The quasi-entropy derivative with a possibly singular PSD first input. -/
+/-- C05: the quasi-entropy derivative with a possibly singular PSD first input. -/
 lemma quasi_derivative_psd_pd {ρ σ : L H} (hρ : 0 ≤ ρ)
     (hσ : σ ∈ pdSetLM) :
     HasDerivAt (fun α => (sandwichedQuasi α ρ σ).re)
@@ -75,8 +75,6 @@ lemma quasi_derivative_psd_pd {ρ σ : L H} (hρ : 0 ≤ ρ)
   exact quasi_derivative_psd_pd_of_joint_continuity hρ hσ
     (weighted_log_joint_continuity (ρ := ρ.toContinuousLinearMap)
       (σ := σ.toContinuousLinearMap) hρ hσ)
-
-
 
 
 end SandwichedRenyiRelativeEntropy.AlphaOneSupport

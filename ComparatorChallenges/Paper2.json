@@ -1,0 +1,31 @@
+{
+  "challenge_module": "ComparatorChallenges.Paper2",
+  "solution_module": "ComparatorChallenges.Paper2Solution",
+  "theorem_names": [
+    "ComparatorChallenges.Paper2.gsl_y54",
+    "ComparatorChallenges.Paper2.gsl_y53",
+    "ComparatorChallenges.Paper2.gsl_y55",
+    "ComparatorChallenges.Paper2.strongSubadditivity_of_state",
+    "ComparatorChallenges.Paper2.strictDPIEquivalences",
+    "ComparatorChallenges.Paper2.outputSupportDPIEquivalences",
+    "ComparatorChallenges.Paper2.monotoneOnPosDef_of_sandwiched",
+    "ComparatorChallenges.Paper2.monotoneOnPosDef_of_petz",
+    "ComparatorChallenges.Paper2.monotoneOnPosDef",
+    "ComparatorChallenges.Paper2.monotoneOnNonNeg",
+    "ComparatorChallenges.Paper2.loewnerUnitIntervalFourConditions",
+    "ComparatorChallenges.Paper2.unitIntervalPickExtension_iff_integralRep",
+    "ComparatorChallenges.Paper2.operatorMonotoneOnUnitInterval_of_integralRep",
+    "ComparatorChallenges.Paper2.strictDPIEquivalences_via_hansenPedersen",
+    "ComparatorChallenges.Paper2.outputSupportDPIEquivalences_via_hansenPedersen",
+    "ComparatorChallenges.Paper2.strictDPIEquivalences_via_loewner",
+    "ComparatorChallenges.Paper2.outputSupportDPIEquivalences_via_loewner",
+    "ComparatorChallenges.Paper2.monotoneOnPosDef_via_sandwichedRenyi",
+    "ComparatorChallenges.Paper2.monotoneOnPosDef_via_hiaiPetz"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "enable_nanoda": true
+}

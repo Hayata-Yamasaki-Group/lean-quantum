@@ -28,14 +28,16 @@ universe u
 
 variable {ℋ : Type u} [Qudit ℋ]
 
-/- \textbf{Main result and proof route.}
+/- **Main result and proof route.**
 This chapter proves strong subadditivity (SSA) of von Neumann entropy on finite-dimensional complex
-Hilbert spaces.
-The proof starts from the data-processing inequality for the sandwiched Rényi divergence of
-nonnegative operators.
-First, taking the limit $\alpha\to1^+$ for positive definite operators gives the
-data-processing inequality for normalized Umegaki relative entropy. This chapter distinguishes the
-following two kinds of perturbation. First,
+Hilbert spaces. The proof starts from the data-processing inequality for normalized Umegaki
+relative entropy on positive definite operators, supplied by the selected Umegaki DPI provider
+(`UmegakiDPI.selectedProvider`). In the selection of this version (via1), this inequality is
+obtained from the data-processing inequality for the sandwiched Rényi divergence of nonnegative
+operators by taking the limit $\alpha\downarrow1$; in the alternative selection (via2), it is
+obtained from the data-processing inequality for the Petz Rényi divergence by taking the limit
+$\alpha\uparrow1$. This chapter
+distinguishes the following two kinds of perturbation. First,
 $\varepsilon I$ perturbations of operators and faithful approximations of channels extend the
 data-processing inequality for the normalized Umegaki quantity,
 obtained for positive definite inputs, to pairs of nonnegative operators satisfying support
@@ -47,17 +49,18 @@ Second, mixing the state with the normalized identity operator, taking the limit
 coefficient tends to $0$, and using continuity of entropy
 yields the general-state version from the version with faithful marginals.
 
-\textbf{The version with faithful marginals and the general-state version.}
-This chapter proves strong subadditivity in two stages. First,
-`strongSubadditivity` proves the version with faithful marginals, assuming only that the marginal
-operators satisfy
+**The version with faithful marginals and the general-state version.**
+This chapter proves strong subadditivity in two stages. First, the theorem
+`VonNeumann.strongSubadditivity` proves the version with faithful marginals, assuming
+only that the marginal operators satisfy
 \[
   \rho_A>0,\qquad \rho_{BC}>0.
 \]
 Even at this stage, faithfulness of $\rho_{ABC}$ and $\rho_{AB}$ is
 not assumed, and $\rho_B>0$ is derived by taking the partial trace of $\rho_{BC}>0$.
 
-In `strongSubadditivity_of_state`, the mixture with the normalized identity operator
+In the subsequent theorem `VonNeumann.strongSubadditivity_of_state`, the mixture with the
+normalized identity operator
 \[
   \rho_\lambda=(1-\lambda)\rho+\lambda d^{-1}I
 \]
@@ -65,10 +68,9 @@ and continuity of von Neumann entropy also remove the faithfulness assumptions o
 operators, yielding the general version for arbitrary
 finite-dimensional tripartite states.
 
-\textbf{Notation.}
+**Notation.**
 The logarithms in this formalization are natural logarithms. In general, let $b>1$ and denote
-entropy and
-relative entropy defined using logarithms to base $b$ by $S_b,D_b$, respectively. Then
+entropy and relative entropy defined using logarithms to base $b$ by $S_b,D_b$, respectively. Then
 \[
   S_b(\rho)=\frac{S_{\ln}(\rho)}{\ln b},\qquad
   D_b(\rho\Vert\sigma)=\frac{D_{\ln}(\rho\Vert\sigma)}{\ln b}.
@@ -78,30 +80,34 @@ Equivalently, $S_{\ln}=(\ln b)S_b$, and for $b=2$,
   S_{\ln}=(\ln 2)S_2.
 \]
 Since $1/\ln b>0$, the direction and equality conditions of each inequality, including strong
-subadditivity,
-are unchanged by a change of logarithm base.
+subadditivity, are unchanged by a change of logarithm base.
 
-\textbf{Correspondence with the literature.}
+**Correspondence with the literature.**
 The roles are distinguished as follows. The historical source of strong subadditivity is
-Lieb--Ruskai (1973).
-The statement reference for the final general-state version is Carlen (2025), Theorem 7.58, formula
-(7.5.1).
-The reference for the proof route deriving strong subadditivity from the data-processing inequality
-is Carlen (2010), Theorem 6.6,
-formulas (6.12)--(6.14). In Lean, this proof route is first implemented as the version with faithful
-marginals, in which $\rho_A$ and $\rho_{BC}$ are
-positive definite, and is then extended to the general-state version using mixtures with the
-normalized identity operator and continuity of
+Lieb--Ruskai (1973). The basic route of this proof follows Carlen's lecture notes (version of May 3,
+2009), p. 47, proof of Theorem 6.6. The printed inequality in Theorem 6.6, S(ρ13) + S(ρ23) ≥
+S(ρ123) + S(ρ3), becomes S(ρ_AB) + S(ρ_BC) ≥ S(ρ_ABC) + S(ρ_B) under (1, 2, 3) = (A, C, B),
+with the tensor factors permuted into the A ⊗ (B ⊗ C) order used in Lean.
+The formalization uses the partial trace over the third system directly instead of the
+conditional-expectation presentation, and states the required positivity and support inclusions
+explicitly. In Lean, this proof route is first implemented as the version with faithful marginals,
+in which $\rho_A$ and $\rho_{BC}$ are positive definite, and is then extended to the general-state
+version using mixtures with the normalized identity operator and continuity of
 entropy.
 
-\textbf{Bibliography.}
+**Bibliography.**
 The full bibliographic details of the references cited in this chapter are as follows (the text uses
 abbreviated references by author, year, and theorem number).
 E.~H.~Lieb and M.~B.~Ruskai, ``Proof of the strong subadditivity of quantum-mechanical entropy,''
 J.~Math.~Phys.~14, 1938--1941 (1973).
+E.~Carlen, ``Trace Inequalities and Quantum Entropy: An Introductory Course,'' lecture notes,
+version of May 3, 2009.
 E.~Carlen, ``Trace Inequalities and Quantum Entropy: An Introductory Course,''
 Contemporary Mathematics 529, AMS, 73--140 (2010).
 E.~Carlen, ``Inequalities in Matrix Algebras,'' Graduate Studies in Mathematics 251, AMS (2025).
+M.~M.~Wilde, ``From Classical to Quantum Shannon Theory,'' arXiv:1106.1445v8 (2019).
+M.~Tomamichel, ``Quantum Information Processing with Finite Resources,''
+SpringerBriefs in Mathematical Physics 5, Springer (2016), arXiv:1504.00233.
 R.~L.~Frank and E.~H.~Lieb, ``Monotonicity of a relative R\'enyi entropy,''
 J.~Math.~Phys.~54, 122201 (2013), arXiv:1306.5358v3.
 M.~M\"uller-Lennert, F.~Dupuis, O.~Szehr, S.~Fehr, and M.~Tomamichel,
@@ -117,8 +123,7 @@ noncomputable def vonNeumannEntropy (ρ : L ℋ) : ℝ :=
 
 section
 
--- Give Mathlib's bounded-operator C*-algebra instance local priority for
--- `CFCTransport.cfc_log_toCLM`.
+
 attribute [local instance 2000]
   instCStarAlgebraContinuousLinearMapComplexIdOfCompleteSpace
 

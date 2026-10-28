@@ -6,11 +6,6 @@ Authors: Hayata Yamasaki
 
 import Quantum.QuantumMechanics.Channel.TensorModel
 
--- `KrausRep` and `HasKraus` retain explicit finite-index instances.
--- Their binders are shared by the Choi and Stinespring interfaces.
-set_option linter.unusedDecidableInType false
-set_option linter.unusedFintypeInType false
-
 /-!
 Choi and Kraus representation predicates, rank packages, and Stinespring setup.
 -/
@@ -30,16 +25,16 @@ variable {ι : Type*} [DecidableEq ι] [Fintype ι]
 /-! ### Choi and Kraus representation predicates -/
 /--
 Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press,
-2018), Theorem 2.22. Generalization to an arbitrary algebraic basis, agreeing with the source
-condition at the standard basis. The zero map and zero dimensions are also allowed.
+2018), Theorem 2.22. Generalization to an arbitrary algebraic basis, agreeing with the condition of
+the source at the standard basis. The zero map and zero dimensions are also allowed.
 -/
 def ChoiPositive (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) : Prop :=
   0 ≤ choi b Φ
 
 /--
 Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press,
-2018), Theorem 2.22. Packages the Kraus condition with a fixed finite index type. The zero map, an
-empty index type, and zero dimensions are also allowed.
+2018), Theorem 2.22. The Kraus condition is packaged with a fixed finite index type. The zero map,
+the empty index type and zero dimensions are also allowed.
 -/
 def KrausRep (Φ : T ℋ₁ ℋ₂) (κ : Type*) [DecidableEq κ] [Fintype κ] : Prop :=
   ∃ A : κ → (ℋ₁ →ₗ[ℂ] ℋ₂),
@@ -62,8 +57,8 @@ noncomputable def choiRank (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ�
 
 /--
 Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press,
-2018), Theorem 2.22. Packages the Kraus condition by existential quantification over a finite index
-type. The zero map, an empty index type, and zero dimensions are also allowed.
+2018), Theorem 2.22. The Kraus condition is packaged by an existential quantification over finite
+index types. The zero map, the empty index type and zero dimensions are also allowed.
 -/
 def HasKraus (Φ : T ℋ₁ ℋ₂) : Prop :=
   ∃ (κ : Type u) (_ : DecidableEq κ) (_ : Fintype κ),
@@ -230,7 +225,7 @@ Source: John Watrous, "The Theory of Quantum Information" (Cambridge University 
 (1.121). Corresponds to the definition of the right partial trace.
 -/
 noncomputable def traceOutRight {ℋ₃ : Type u} [Qudit ℋ₃] : T (ℋ₂ ⊗[ℂ] ℋ₃) ℋ₂ :=
-  traceOutLeft.comp
+  (traceOutLeft (ℋ₁ := ℋ₃) (ℋ₂ := ℋ₂)).comp
     (conjugateEnd (TensorProduct.comm ℂ ℋ₂ ℋ₃))
 
 noncomputable def krausToStinespringOperator
@@ -295,7 +290,7 @@ lemma conjugateEnd_krausToStinespringOperator_apply_single_tmul
       (ℋ₁ := ℋ₁) (ℋ₂ := ℋ₂) A X b y)
 
 lemma finrank_kraus_environment
-    {κ : Type u} [DecidableEq κ] [Fintype κ] :
+    {κ : Type u} [Fintype κ] :
     Module.finrank ℂ (EuclideanSpace ℂ κ) = Fintype.card κ := by
   simp [finrank_euclideanSpace (𝕜 := ℂ) (ι := κ)]
 
@@ -312,7 +307,7 @@ lemma linearMap_eq_sum_outer_product
       simp [LinearMap.sum_apply, outer_product_eq_rankOne]
 
 lemma basis_dual_inner
-    {E : Type u} [Qudit E] {ι : Type*} [DecidableEq ι] [Fintype ι]
+    {E : Type u} [Qudit E] {ι : Type*} [DecidableEq ι] [Finite ι]
     (b : Module.Basis ι ℂ E) (i j : ι) :
     inner ℂ (b i)
       ((InnerProductSpace.toDual ℂ E).symm ((b.coord j).toContinuousLinearMap)) =
@@ -327,24 +322,26 @@ lemma basis_dual_inner
   by_cases hij : i = j <;> simp [hij]
 
 lemma basis_sum_dual
-    {E : Type u} [Qudit E] {ι : Type*} [DecidableEq ι] [Fintype ι]
+    {E : Type u} [Qudit E] {ι : Type*} [Fintype ι]
     (b : Module.Basis ι ℂ E) (x : E) :
     x =
       ∑ i : ι, inner ℂ (b i) x •
         ((InnerProductSpace.toDual ℂ E).symm ((b.coord i).toContinuousLinearMap)) := by
+  classical
   apply InnerProductSpace.ext_inner_left_basis b
   intro j
   rw [inner_sum]
   simp [inner_smul_right, basis_dual_inner]
 
 lemma linearMap_eq_sum_basis_outer_product
-    {E : Type u} [Qudit E] {ι : Type*} [DecidableEq ι] [Fintype ι]
+    {E : Type u} [Qudit E] {ι : Type*} [Fintype ι]
     (b : Module.Basis ι ℂ E) (T : L E) :
     T =
       ∑ i : ι, ∑ j : ι,
         (b.coord j
           (T ((InnerProductSpace.toDual ℂ E).symm ((b.coord i).toContinuousLinearMap)))) •
           outer_product (b i) (b j) := by
+  classical
   ext x
   have hx := basis_sum_dual b x
   calc
@@ -374,7 +371,7 @@ lemma linearMap_eq_sum_basis_outer_product
           simp [outer_product, dualTensorHom_apply, smul_smul, mul_comm]
 
 lemma basis_outer_coeff
-    {E : Type u} [Qudit E] {ι : Type*} [DecidableEq ι] [Fintype ι]
+    {E : Type u} [Qudit E] {ι : Type*} [DecidableEq ι] [Finite ι]
     (b : Module.Basis ι ℂ E) (p q i j : ι) :
     b.coord q ((outer_product (b i) (b j))
       ((InnerProductSpace.toDual ℂ E).symm ((b.coord p).toContinuousLinearMap))) =

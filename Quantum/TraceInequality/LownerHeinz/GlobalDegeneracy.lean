@@ -1,5 +1,11 @@
+import Quantum.TraceInequality.LiebAndo.LownerHeinzTheorem
+import Quantum.TraceInequality.TraceFunctionMonotonicity.LownerHeinzTheorem
+import Quantum.TraceInequality.HansenPedersen.LownerHeinzTheorem
+import Quantum.TraceInequality.HiaiPetz.LownerHeinzTheorem
 import Quantum.TraceInequality.LownerHeinzTheorem
+import Quantum.TraceInequality.LownerHeinzTheoremRetained
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import Quantum.TraceInequality.LownerHeinz.ReciprocalRetained
 
 /-!
 # Degeneracy of the unrestricted operator-convexity predicates
@@ -120,7 +126,7 @@ theorem operatorConvexOnAll_Ici_sq :
     OperatorConvexOnAll.{u} (Set.Ici 0) (fun x : ℝ ↦ x ^ (2 : ℕ)) := by
   intro K _ _ _ _
   simpa only [Real.rpow_two] using
-    (operatorConvexOn_rpow_Ici (ℋ := K) 2 (by constructor <;> norm_num))
+    (power_Icc_one_two_operatorConvexOn_Ici (ℋ := K) 2 (by constructor <;> norm_num))
 
 /-- The localized canary is a nonzero function. -/
 theorem sq_ne_zero : (fun x : ℝ ↦ x ^ (2 : ℕ)) ≠ 0 := by

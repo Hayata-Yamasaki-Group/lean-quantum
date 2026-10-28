@@ -4,7 +4,13 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Hayata Yamasaki
 -/
 
-import Quantum.QuantumMechanics.QuantumChannelCore
+import Quantum.QuantumMechanics.Channel.Amplification
+import Quantum.QuantumMechanics.Channel.Basic
+import Quantum.QuantumMechanics.Channel.ChoiKraus
+import Quantum.QuantumMechanics.Channel.Equivalence
+import Quantum.QuantumMechanics.Channel.Representations
+import Quantum.QuantumMechanics.OperatorInstances
+import Quantum.QuantumMechanics.QuantumState
 
 /-!
 # Isometric Stinespring dilation of finite-dimensional channels
@@ -14,6 +20,7 @@ open QuantumState
 open scoped ComplexOrder NNReal Topology
 
 namespace QuantumChannel.Stinespring
+
 
 section Monotonicity
 
@@ -97,30 +104,29 @@ private lemma st_hasKraus_of_lifted_cp
 
 Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press,
 2018), Corollary 2.27 / Theorem 2.22 / Proposition 2.20 / Theorem 2.26. A one-directional corollary
-of Corollary 2.27, from CPTP
-to an isometric dilation. Rank minimality and the other direction of the equivalence are not
-included. -/
+of Corollary 2.27, from CPTP to an isometric extension. Rank minimality and the other direction of
+the equivalence are not included. -/
 theorem _root_.QuantumChannel.CPTP.exists_isometric_stinespring_dilation
     {𝒦 : Type u₅} [Qudit 𝒦]
-    (Φ : QuantumChannel.CPTP ℋ 𝒦) :
+    (E : QuantumChannel.CPTP ℋ 𝒦) :
     ∃ (ℋ_env : Type u₅) (_ : Qudit ℋ_env) (_ : Nontrivial ℋ_env)
       (V : ℋ →ₗ[ℂ] (𝒦 ⊗[ℂ] ℋ_env)),
         (LinearMap.adjoint V).comp V = (1 : L ℋ) ∧
         ∀ γ : L ℋ,
-          Φ.toFun γ =
+          E.toFun γ =
             traceOutRight ((V.comp γ).comp (LinearMap.adjoint V)) := by
   classical
-  let ΦL : T ℋ 𝒦 := Φ.toLinearMap
-  have hKraus : HasKraus ΦL :=
-    st_hasKraus_of_lifted_cp ΦL ⟨Φ.toCompletelyPositiveMap, rfl⟩
+  let Φ : T ℋ 𝒦 := E.toLinearMap
+  have hKraus : HasKraus Φ :=
+    st_hasKraus_of_lifted_cp Φ ⟨E.toCompletelyPositiveMap, rfl⟩
   obtain ⟨κ, hκ_dec, hκ_fin, A, hA_eq⟩ := hKraus
   letI : DecidableEq κ := hκ_dec
   letI : Fintype κ := hκ_fin
   set S : L ℋ := ∑ a : κ, (LinearMap.adjoint (A a)).comp (A a) with hS_def
   have hSρ_tr : ∀ ρ : L ℋ, Tr (S * ρ) = Tr ρ := by
     intro ρ
-    have htr : Tr ρ = Tr (ΦL ρ) := Φ.trace_map ρ
-    have hKr : ΦL ρ =
+    have htr : Tr ρ = Tr (Φ ρ) := E.trace_map ρ
+    have hKr : Φ ρ =
         ∑ a : κ, (A a).comp (ρ.comp (LinearMap.adjoint (A a))) := hA_eq ρ
     have hcycle : ∀ a : κ,
         Tr ((A a).comp (ρ.comp (LinearMap.adjoint (A a)))) =
@@ -140,7 +146,7 @@ theorem _root_.QuantumChannel.CPTP.exists_isometric_stinespring_dilation
         rw [(hcycle a).symm]
       _ = Tr (∑ a : κ, (A a).comp (ρ.comp (LinearMap.adjoint (A a)))) := by
         rw [map_sum Tr]
-      _ = Tr (ΦL ρ) := by rw [← hKr]
+      _ = Tr (Φ ρ) := by rw [← hKr]
       _ = Tr ρ := htr.symm
   have hSumAA : S = (1 : L ℋ) := by
     apply LinearMap.ext
@@ -170,16 +176,10 @@ theorem _root_.QuantumChannel.CPTP.exists_isometric_stinespring_dilation
     kraus_to_pure_stinespring_isometry (ℋ := ℋ) A hSumAA
   refine ⟨EuclideanSpace ℂ κ, inferInstance, inferInstance, V, hV_iso, ?_⟩
   intro γ
-  change ΦL γ = traceOutRight ((V.comp γ).comp (LinearMap.adjoint V))
+  change Φ γ = traceOutRight ((V.comp γ).comp (LinearMap.adjoint V))
   rw [hA_eq γ, hV_eq γ]
+
 
 end Monotonicity
 
 end QuantumChannel.Stinespring
-
-namespace QuantumChannel.CPTP
-
-@[deprecated (since := "2026-09-05")]
-alias exists_stinespring_dilation := exists_isometric_stinespring_dilation
-
-end QuantumChannel.CPTP

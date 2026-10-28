@@ -5,6 +5,17 @@ Authors: Hayata Yamasaki
 -/
 
 import Quantum.QuantumMechanics.Channel.Stinespring
-import Quantum.QuantumEntropy.SandwichedRenyi.PositiveDefiniteLinear
+import Quantum.QuantumEntropy.RenyiDPI.Sandwiched.LiebAndo.PositiveDefinite
+import Quantum.QuantumEntropy.Common.PositiveDefiniteCertificatesGeneralizedStein
+import Quantum.QuantumEntropy.RenyiDPI.Sandwiched.LiebAndo.PositiveDefiniteCertificates
+import Quantum.QuantumEntropy.SandwichedRenyi.Internal.BridgeCertificates
+import Quantum.QuantumMechanics.Channel.BasicGeneralizedStein
+import Quantum.QuantumMechanics.Channel.ChoiKrausGeneralizedStein
+import Quantum.QuantumMechanics.QuantumChannel
+import Quantum.TraceInequality.GeneralizedPerspectiveFunctionRetained
+import Quantum.TraceInequality.HansenPedersen.LownerHeinzTheorem
+import Quantum.TraceInequality.LiebTrace.MonotonicityRetained
+import Quantum.TraceInequality.LownerHeinz.ReciprocalRetained
 
-/-! Re-exports Stinespring dilation and positive-definite sandwiched Rényi facts. -/
+/-! Imports the Stinespring dilation and the positive-definite facts for the sandwiched Rényi
+divergence (kept as a compatibility import path). -/

@@ -1,120 +1,11 @@
 import Quantum.QuantumEntropy.UmegakiDPI.AlphaOneSupport
 
-import Quantum.QuantumEntropy.CFCTransport
-
-section EigenvectorTransport
-open QuantumState
-
-private lemma rpow_apply_eigenvector_clm_support {ℋ : Type*} [Qudit ℋ]
-    (T : B ℋ) (hT : 0 ≤ T) (p : ℝ) (v : ℋ) (μ : ℝ)
-    (hv : T v = (algebraMap ℝ ℂ μ) • v) (hμ : μ ∈ spectrum ℝ T) :
-    CFC.rpow T p v = (algebraMap ℝ ℂ (μ ^ p)) • v := by
-  letI : IsScalarTower ℝ ℂ (B ℋ) := RestrictScalars.isScalarTower ℝ ℂ (B ℋ)
-  letI : IsScalarTower ℝ ℂ (L ℋ) := RestrictScalars.isScalarTower ℝ ℂ (L ℋ)
-  have hμL : μ ∈ spectrum ℝ (T : L ℋ) := by
-    rw [← spectrum.preimage_algebraMap ℂ (R := ℝ)] at hμ ⊢
-    simpa only [ContinuousLinearMap.spectrum_eq] using hμ
-  have hp := congrArg (fun A : B ℋ => A v)
-    (CFCTransport.cfc_rpow_toCLM (T : L ℋ) p)
-  change CFC.rpow (T : L ℋ) p v = CFC.rpow T p v at hp
-  rw [← hp]
-  exact TensorCFC.rpow_apply_eigenvector_linear (T : L ℋ)
-    ((ContinuousLinearMap.coe_le_coe_iff _ _).mpr hT) p v μ hv hμL
-
-private lemma spectrum_real_finite_clm_support {ℋ : Type*} [Qudit ℋ]
-    (T : B ℋ) : Set.Finite (spectrum ℝ T) := by
-  letI : IsScalarTower ℝ ℂ (B ℋ) := RestrictScalars.isScalarTower ℝ ℂ (B ℋ)
-  rw [← spectrum.preimage_algebraMap ℂ (R := ℝ), ContinuousLinearMap.spectrum_eq]
-  exact (Module.End.finite_spectrum (T : L ℋ)).preimage
-    (fun _ _ _ _ h => RCLike.ofReal_injective h)
-
-end EigenvectorTransport
-
-section RepresentationSupport
-open QuantumState SandwichedRenyiRelativeEntropy
-open scoped ComplexOrder NNReal Topology
-universe uDef
-variable {ℋ : Type uDef} [Qudit ℋ]
-
-private lemma rpow_toContinuousLinearMap (A : L ℋ) (p : ℝ) :
-    (CFC.rpow A p).toContinuousLinearMap = CFC.rpow A.toContinuousLinearMap p := by
-  let e := QuantumChannel.linearToContinuousEndStarAlgEquiv ℋ
-  letI : IsScalarTower ℝ≥0 ℂ (L ℋ) :=
-    ⟨fun r c x => by
-      change ((r : ℂ) * c) • x = (r : ℂ) • c • x
-      rw [mul_smul]⟩
-  letI : IsScalarTower ℝ≥0 ℂ (B ℋ) :=
-    ⟨fun r c x => by
-      change ((r : ℂ) * c) • x = (r : ℂ) • c • x
-      rw [mul_smul]⟩
-  let eNN : L ℋ ≃ₐ[ℝ≥0] B ℋ := e.toAlgEquiv.restrictScalars ℝ≥0
-  change e (cfc (fun x : ℝ≥0 => x ^ p) A) = cfc (fun x : ℝ≥0 => x ^ p) (e A)
-  by_cases hA : 0 ≤ A
-  · have heA : (0 : B ℋ) ≤ e A := by
-      exact (ContinuousLinearMap.coe_le_coe_iff
-        (0 : B ℋ) A.toContinuousLinearMap).mp hA
-    by_cases hf : ContinuousOn (fun x : ℝ≥0 => x ^ p) (spectrum ℝ≥0 A)
-    · exact StarAlgHomClass.map_cfc (R := ℝ≥0) (S := ℂ) e _ A hf
-        (StarAlgEquiv.isometry e).continuous hA heA
-    · have hf' : ¬ ContinuousOn (fun x : ℝ≥0 => x ^ p)
-          (spectrum ℝ≥0 (e A)) := by
-        rw [show e A = eNN A from rfl, AlgEquiv.spectrum_eq eNN A]
-        exact hf
-      rw [cfc_apply_of_not_continuousOn A hf,
-        cfc_apply_of_not_continuousOn (e A) hf', map_zero]
-  · have heA : ¬ (0 : B ℋ) ≤ e A := by
-      intro heA
-      exact hA ((ContinuousLinearMap.coe_le_coe_iff
-        (0 : B ℋ) A.toContinuousLinearMap).mpr heA)
-    rw [cfc_apply_of_not_predicate A hA,
-      cfc_apply_of_not_predicate (e A) heA, map_zero]
-
-private lemma rpow_toLinearMap (A : L ℋ) (p : ℝ) :
-    ((CFC.rpow A.toContinuousLinearMap p : B ℋ) : L ℋ) =
-      CFC.rpow A p := by
-  simpa using (congrArg ContinuousLinearMap.toLinearMap
-    (rpow_toContinuousLinearMap A p)).symm
-
-private lemma rpow_clm_toLinearMap
-    (A : B ℋ) (p : ℝ) :
-    ((CFC.rpow A p : B ℋ) : L ℋ) =
-      CFC.rpow (A : L ℋ) p := by
-  have hA : (A : L ℋ).toContinuousLinearMap = A := by
-    ext x
-    rfl
-  simpa only [hA] using rpow_toLinearMap (A : L ℋ) p
-
-/-- Proof-support equation for evaluating `sandwichedQuasi`
-at CLM arguments through the canonical coercion. -/
-private lemma residual_sandwichedQuasi_eq_clm_direct
-    (a : ℝ) (rho sigma : B ℋ) :
-    sandwichedQuasi a (rho : L ℋ) (sigma : L ℋ) =
-      Tr ((CFC.rpow
-        (CFC.rpow sigma ((1 - a) / (2 * a)) * rho *
-          CFC.rpow sigma ((1 - a) / (2 * a))) a :
-            B ℋ) : L ℋ) := by
-  rw [sandwichedQuasi_eq_direct]
-  change Tr (CFC.rpow
-      (CFC.rpow (sigma : L ℋ) ((1 - a) / (2 * a)) * (rho : L ℋ) *
-        CFC.rpow (sigma : L ℋ) ((1 - a) / (2 * a))) a) =
-    Tr ((CFC.rpow
-      (CFC.rpow sigma ((1 - a) / (2 * a)) * rho *
-        CFC.rpow sigma ((1 - a) / (2 * a))) a : B ℋ) : L ℋ)
-  rw [rpow_clm_toLinearMap]
-  change _ = Tr (CFC.rpow
-    (((CFC.rpow sigma ((1 - a) / (2 * a)) : B ℋ) : L ℋ) *
-      (rho : L ℋ) *
-      ((CFC.rpow sigma ((1 - a) / (2 * a)) : B ℋ) : L ℋ)) a)
-  rw [rpow_clm_toLinearMap]
-
-end RepresentationSupport
-
 /-!
 # Additional support-domain alpha-one leaves
 
-Source: arXiv:2607.05492v1, Section 1.5; Müller-Lennert et al. (2013), alpha-one analysis.
-This module proves trace-power integral identities and conditional derivative lemmas.
-The general support-domain limit is proved in AlphaOneSupportLimit.lean.
+Source: main.tex:219; Müller-Lennert et al. (2013), alpha-one analysis.
+This module records proved residual leaves. It does not assert the general
+support-domain limit.
 -/
 
 open QuantumState QuantumChannel GeneralizedPerspectiveFunction MeasureTheory
@@ -131,9 +22,10 @@ lemma rpow_apply_eq_zero_of_mem_ker {A : L H} (hA : 0 ≤ A) {x : H}
   have he : A.toContinuousLinearMap x = ((0 : ℝ) : ℂ) • x := by simpa using hx
   change (CFC.rpow A t).toContinuousLinearMap x = 0
   rw [CFCTransport.cfc_rpow_toCLM]
-  have hh := rpow_apply_eigenvector_clm_support A.toContinuousLinearMap hA t x 0 he
+  have hh := TensorCFC.rpow_apply_eigenvector A.toContinuousLinearMap hA t x 0 he
     (TensorCFC.mem_spectrum_real_of_eigenvector hx0 he)
   simpa only [Real.zero_rpow ht, map_zero, zero_smul] using hh
+
 
 /-- The sandwich remains supported. Zero exponent uses I, not the support projection. -/
 lemma sandwich_support {ρ σ : L H} (hσ : 0 ≤ σ) (hsupp : SupportLE ρ σ)
@@ -147,6 +39,7 @@ lemma sandwich_support {ρ σ : L H} (hσ : 0 ≤ σ) (hsupp : SupportLE ρ σ)
   · intro x hx
     change CFC.rpow σ t (ρ (CFC.rpow σ t x)) = 0
     rw [rpow_apply_eq_zero_of_mem_ker hσ hx (ne_of_gt ht), map_zero, map_zero]
+
 
 /-- A continuous extension in the spectral variable, agreeing with x^s log x for x≥0. -/
 noncomputable def weightedScalar (s x : ℝ) : ℝ :=
@@ -196,11 +89,12 @@ lemma cfc_weightedScalar_eq {K : B H} (hK : 0 ≤ K) {s : ℝ} (hs : 0 < s) :
   rw [CFC.rpow_eq_pow, CFC.rpow_eq_cfc_real hK]
   change _ = cfc (fun x : ℝ => x ^ s) K * cfc Real.log K
   rw [← cfc_mul (fun x : ℝ => x ^ s) Real.log K
-    ((spectrum_real_finite_clm_support K).continuousOn _)
-    ((spectrum_real_finite_clm_support K).continuousOn _)]
+    ((TensorCFC.spectrum_real_finite K).continuousOn _)
+    ((TensorCFC.spectrum_real_finite K).continuousOn _)]
   apply cfc_congr
   intro x hx
   exact weightedScalar_eq (spectrum_nonneg_of_nonneg hK hx) hs
+
 
 /-- For a fixed PSD matrix the weighted log trace is continuous in all exponents.
 Zero eigenvalues contribute zero even at exponent zero, because log 0 = 0. -/
@@ -214,7 +108,7 @@ lemma continuous_trace_rpow_log_of_nonneg {K : B H} (hK : 0 ≤ K) :
     hpos.isSymmetric.apply_eigenvectorBasis rfl i
   have hnn (i) : 0 ≤ eig i := hpos.toLinearMap.nonneg_eigenvalues rfl i
   have hpow (s : ℝ) (i) : CFC.rpow K s (b i) = ((eig i ^ s : ℝ) : ℂ) • b i :=
-    rpow_apply_eigenvector_clm_support K hK s (b i) (eig i) (heig i)
+    TensorCFC.rpow_apply_eigenvector K hK s (b i) (eig i) (heig i)
       (TensorCFC.mem_spectrum_real_of_eigenvector (b.orthonormal.ne_zero i) (heig i))
   have hlog (i) : CFC.log K (b i) = ((Real.log (eig i) : ℝ) : ℂ) • b i :=
     TensorCFC.cfc_real_apply_eigenvector (IsSelfAdjoint.of_nonneg hK) Real.log (heig i)
@@ -254,7 +148,7 @@ lemma trace_rpow_sub_eq_integral_of_nonneg {K : B H} (hK : 0 ≤ K)
   rw [show CFC.rpow K 1 = K from CFC.rpow_one K hK] at ht
   exact ht.symm
 
-/-- The Part A derivative under the explicit joint-continuity hypothesis. -/
+/-- Conditional Part A assembly. The open C04 obligation is an explicit hypothesis. -/
 lemma hasDerivAt_partA_of_joint_continuity {ρ σ : B H} (hρ : 0 ≤ ρ) (hσ : σ ∈ pdSet)
     (hjoint : ContinuousAt (fun p : ℝ × ℝ =>
       (Tr ((CFC.rpow (CFC.rpow σ ((1 - p.1) / (2 * p.1)) * ρ *
@@ -293,10 +187,10 @@ lemma hasDerivAt_partA_of_joint_continuity {ρ σ : B H} (hρ : 0 ≤ ρ) (hσ :
   rw [hg11] at hF
   apply hF.congr_of_eventuallyEq
   filter_upwards [eventually_gt_nhds (show (0 : ℝ) < 1 by norm_num)] with α hα
-  rw [residual_sandwichedQuasi_eq_clm_direct, trace_conj_eq_trace_mul_rpow hσ α]
+  rw [sandwichedQuasi_eq_clm_direct, trace_conj_eq_trace_mul_rpow hσ α]
   exact trace_rpow_sub_eq_integral_of_nonneg (hK α) hα
 
-/-- The quasi-entropy derivative under joint continuity, using the Part B integral identity. -/
+/-- Conditional C05 assembly, preserving the singular PSD input and using Part B. -/
 lemma quasi_derivative_psd_pd_of_joint_continuity {ρ σ : L H} (hρ : 0 ≤ ρ)
     (hσ : σ ∈ pdSetLM)
     (hjoint : ContinuousAt (fun p : ℝ × ℝ =>
@@ -329,5 +223,7 @@ lemma quasi_derivative_psd_pd_of_joint_continuity {ρ σ : L H} (hρ : 0 ≤ ρ)
     change (Tr (ρ * (CFC.log ρ - CFC.log σ))).re =
       (Tr (ρ * CFC.log ρ)).re + -(Tr (ρ * CFC.log σ)).re
     rw [mul_sub, map_sub, Complex.sub_re, sub_eq_add_neg]
+
+
 
 end SandwichedRenyiRelativeEntropy.AlphaOneSupport

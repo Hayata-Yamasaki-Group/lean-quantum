@@ -1,18 +1,12 @@
+# Paper 2 public candidate v3.9.0.
 # yaml-language-server: $schema=https://raw.githubusercontent.com/mathlib-initiative/formalization.yaml/main/schema/v0.4.schema.json
 version: "v0.4"
-
 project:
-  name: "Lean-Quantum: Paper 1"
+  name: "Lean-Quantum: Paper 2"
   description: >-
-    Lean 4 formalization accompanying Lean-Quantum: Toward AI-Assisted
-    Formalization of Quantum Information. Of the 34 theorems checked with
-    Comparator, 29 formalize some of the theorems stated in Sections 1.5 and
-    2--4 of the paper (one theorem of the paper is sometimes split into several
-    Lean theorems), and five justify the choice of definitions of operator
-    convexity and concavity.
-    The scope covers complete positivity and its representations, operator
-    powers, Jensen inequalities, generalized perspectives, Lieb--Ando trace
-    inequalities, and sandwiched Renyi data processing.
+    Companion to the Paper 2 manuscript: interchangeable Lieb--Ando and Hiai--Petz
+    providers for Renyi data processing, fixed downstream SSA and GSL proofs,
+    and explicit statement/solution and dependency-check boundaries.
   authors:
     - "Kazumi Kasaura"
     - "Kei Tsukamoto"
@@ -23,283 +17,271 @@ project:
     - "Masaya Taniguchi"
     - "Sho Sonoda"
     - "Hayata Yamasaki"
-  responsible_maintainers: [] # Maintainers are not listed.
+  responsible_maintainers: []
   license: "Apache-2.0"
-
 sources:
-  - title: "The Theory of Quantum Information"
-    authors: ["John Watrous"]
-    id: "https://cs.uwaterloo.ca/~watrous/TQI/TQI.pdf"
+  - title: "Resources of the Quantum World"
+    authors: ["Gilad Gour"]
+    id: "arXiv:2402.05474v2"
     type: "book"
-    location: "Eqs. (1.119)--(1.121), (1.123)--(1.124), (1.127), (2.64)--(2.65), (2.71); Definition 2.13; Proposition 2.20; Theorems 2.22, 2.26; Corollary 2.27; chapter-level anchors"
+    location: "Theorem 11.4; Lemma 11.3 (upper-bound part)"
     relationship: "adapts"
     author_endorsement: "not-contacted"
-
-  - title: "Trace Inequalities and Quantum Entropy: An Introductory Course"
-    authors: ["E. Carlen"]
-    id: "Contemporary Mathematics 529, AMS, 2010, pp. 73--140"
-    type: "lecture notes"
-    location: "Definition 2.1; Theorems 2.6, 6.1, 6.2, 6.6; Lemmas 2.7--2.8, 5.12"
-    relationship: "adapts"
-    author_endorsement: "not-contacted"
-
-  - title: "Matrix Analysis: Matrix Monotone Functions, Matrix Means, and Majorization"
-    authors: ["F. Hiai"]
-    id: "doi:10.4036/iis.2010.139"
+  - title: "Generalized quantum Stein's lemma and second law of quantum resource theories"
+    authors: ["Masahito Hayashi", "Hayata Yamasaki"]
+    id: "arXiv:2408.02722v3"
     type: "article"
-    location: "Theorem 2.5.2"
+    location: "Theorems 1 and 4; supporting lemmas"
     relationship: "adapts"
     author_endorsement: "not-contacted"
-
+  # Quantum/QuantumEntropy/VonNeumann/Basic.lean and SSA.lean.
+  - title: "Proof of the strong subadditivity of quantum-mechanical entropy"
+    authors: ["Elliott H. Lieb", "Mary Beth Ruskai"]
+    id: "J. Math. Phys. 14 (1973), 1938--1941"
+    type: "article"
+    location: "Strong subadditivity of the von Neumann entropy (original statement)"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  - title: "Trace Inequalities and Quantum Entropy: An Introductory Course"
+    authors: ["Eric A. Carlen"]
+    id: "Lecture notes, version of May 3, 2009"
+    type: "lecture notes"
+    location: "Page 47, proof of Theorem 6.6; Theorem 2.6 and Lemmas 2.7--2.8 for operator powers"
+    relationship: "adapts"
+    note: "The SSA proof route uses Umegaki DPI and faithful mixing; the source's systems (1, 2, 3) correspond to (A, C, B)."
+    author_endorsement: "not-contacted"
+  # Quantum/TraceInequality/HiaiPetz/Core.lean; HansenPedersen/MainEquivalence.lean.
+  - title: "Matrix analysis and its applications"
+    authors: ["Fumio Hiai"]
+    id: "SGC Library 200, Saiensu-sha, 2025"
+    type: "book"
+    location: "Section 6.1; Theorems 6.2--6.4 (Hiai--Petz equivalences, trace monotonicity and trace convexity)"
+    relationship: "adapts"
+    note: "Both strict-output and output-support equivalence packages assume f continuous and strictly positive on (0, infinity)."
+    author_endorsement: "not-contacted"
+  # Quantum/TraceInequality/JensenOperatorInequalityFinite.lean.
+  - title: "Jensen's Operator Inequality"
+    authors: ["Frank Hansen", "Gert K. Pedersen"]
+    id: "doi:10.1112/S0024609303002200"
+    type: "article"
+    location: "Bull. London Math. Soc. 35 (2003), 553--564; finite contraction form of Jensen's operator inequality"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  # Quantum/TraceInequality/HansenPedersen/Basic.lean and Quantum/TraceInequality/HansenPedersen/MonotoneConvexEquivalence/
+  # (re-exported by Quantum/TraceInequality/HansenPedersen/MonotoneConvexEquivalence.lean).
+  - title: "Hilbert spaces and linear operators"
+    authors: ["Fumio Hiai", "Kenjiro Yanagi"]
+    id: "Ohmsha, 2021"
+    type: "book"
+    location: "Section 5.1; Hansen--Pedersen operator monotonicity and convexity equivalences"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  # Quantum/TraceInequality/HansenPedersen (the Hansen--Pedersen route, H1).
+  - title: "Jensen's inequality for operators and Löwner's theorem"
+    authors: ["Frank Hansen", "Gert K. Pedersen"]
+    id: "Math. Ann. 258 (1982), 229--241"
+    type: "article"
+    location: "The equivalence of five conditions, in the form of Hiai--Yanagi, Theorem 5.1.7"
+    relationship: "adapts"
+    note: "The bibliographic data have not been checked against the published article."
+    author_endorsement: "not-contacted"
+  # Quantum/TraceInequality/LiebAndo/JensenOperatorInequality.lean.
+  - title: "Matrix Analysis: Matrix Monotone Functions, Matrix Means, and Majorization"
+    authors: ["Fumio Hiai"]
+    id: "Interdisciplinary Information Sciences 16 (2010), 139--248"
+    type: "article"
+    location: "Theorem 2.5.2 (shared Jensen contraction inequality)"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  # [simon2019] in Quantum/TraceInequality/Loewner; LoewnerTheorem.lean records the chapters.
+  - title: "Loewner's Theorem on Monotone Matrix Functions"
+    authors: ["Barry Simon"]
+    id: "Grundlehren der mathematischen Wissenschaften 354, Springer, 2019"
+    type: "book"
+    location: "Theorem 1.3 (three conditions) and Theorem 5.1 (Loewner matrix positivity for C1 functions), organized as four characterizations by this formalization; Chapters 3, 20 and 27; Theorem 3.8 (Pick/integral correspondence on the normalized interval) and Theorem 3.12 (integral representation implies operator monotonicity)"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  # [carlen2022] in Quantum/TraceInequality/Loewner/Applications/HiaiPetz; OpMontI.lean.
+  - title: "On some convexity and monotonicity inequalities of Elliott Lieb"
+    authors: ["Eric A. Carlen"]
+    id: "arXiv:2202.03591v4"
+    type: "article"
+    location: "Theorem 1.46; the Carlen--Loewner route to Hiai--Petz data processing"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  # Quantum/QuantumEntropy/VonNeumann/Basic.lean; SandwichedRenyi/TripartiteSSA.lean.
+  - title: "Monotonicity of a relative Rényi entropy"
+    authors: ["Rupert L. Frank", "Elliott H. Lieb"]
+    id: "arXiv:1306.5358v3"
+    type: "article"
+    location: "J. Math. Phys. 54, 122201 (2013); Theorem 1 and the sandwiched variational representation"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  - title: "On quantum Rényi entropies: a new generalization and some properties"
+    authors: ["Martin Müller-Lennert", "Frédéric Dupuis", "Oleg Szehr", "Serge Fehr", "Marco Tomamichel"]
+    id: "arXiv:1306.3142v4"
+    type: "article"
+    location: "J. Math. Phys. 54, 122203 (2013); supporting Rényi definitions and order-one analysis"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  # Quantum/TraceInequality/LiebAndo/Extension.lean and LiebAndo/LiebTrace/Bridge.lean (definitions in LiebTrace/Bridge.lean).
+  - title: "The simplest proof of Lieb concavity theorem"
+    authors: ["Ismail Nikoufar", "A. Ebadian", "Madjid Eshaghi Gordji"]
+    id: "Advances in Mathematics 248 (2013), 531--533"
+    type: "article"
+    location: "Page 532; Theorems 1.1, 1.2(b), 1.4; Corollary 1.3 (Lieb--Ando trace inequalities)"
+    relationship: "adapts"
+    author_endorsement: "not-contacted"
+  # Quantum/TraceInequality/LiebAndo/GeneralizedPerspectiveFunction.lean (definitions in GeneralizedPerspectiveFunction.lean).
   - title: "Perspectives of matrix convex functions"
-    authors: ["A. Ebadian", "I. Nikoufar", "M. Eshaghi Gordji"]
+    authors: ["A. Ebadian", "Ismail Nikoufar", "Madjid Eshaghi Gordji"]
     id: "doi:10.1073/pnas.1102518108"
     type: "article"
-    location: "Page 1; Theorem 2.5; Corollary 2.6(i)"
+    location: "PNAS 108(18) (2011), 7313--7314; page 1, Theorem 2.5 and Corollary 2.6"
     relationship: "adapts"
     author_endorsement: "not-contacted"
-
-  - title: "The simplest proof of Lieb concavity theorem"
-    authors: ["I. Nikoufar", "A. Ebadian", "M. Eshaghi Gordji"]
-    id: "doi:10.1016/j.aim.2013.07.019"
-    type: "article"
-    location: "Page 532; Theorems 1.1, 1.2(b), 1.4; Corollary 1.3"
-    relationship: "adapts"
-    author_endorsement: "not-contacted"
-
   - title: "A perspective approach for characterization of Lieb concavity theorem"
-    authors: ["I. Nikoufar"]
+    authors: ["Ismail Nikoufar"]
     id: "doi:10.1515/dema-2016-0040"
     type: "article"
     location: "Theorem 1(i), correction to the origin condition in Corollary 2.6(i)"
     relationship: "adapts"
     author_endorsement: "not-contacted"
-
-  - title: "Monotonicity of a relative Rényi entropy"
-    authors: ["R. L. Frank", "E. H. Lieb"]
-    id: "arXiv:1306.5358v3"
-    type: "article"
-    location: "Theorem 1; Proposition 3; Lemmas 4--5; chapter-level anchors"
-    relationship: "adapts"
-    author_endorsement: "not-contacted"
-
-  - title: "On quantum Rényi entropies: a new generalization and some properties"
-    authors: ["M. Müller-Lennert", "F. Dupuis", "O. Szehr", "S. Fehr", "M. Tomamichel"]
-    id: "arXiv:1306.3142v4"
-    type: "article"
-    location: "Alpha-one analysis and chapter-level anchors for supporting calculus and convexity results"
-    relationship: "adapts"
-    author_endorsement: "not-contacted"
-
-  - title: "Jensen's Operator Inequality"
-    authors: ["F. Hansen", "G. K. Pedersen"]
-    id: "doi:10.1112/S0024609303002200"
-    type: "article"
-    location: "Bull. London Math. Soc. 35 (2003), 553--564; Corollary 2.3; finite contraction form of Jensen's operator inequality"
-    relationship: "adapts"
-    author_endorsement: "not-contacted"
-
-  - title: "Proof of the strong subadditivity of quantum-mechanical entropy"
-    authors: ["E. H. Lieb", "M. B. Ruskai"]
-    id: "J. Math. Phys. 14 (1973), 1938--1941"
-    type: "article"
-    location: "Strong subadditivity of the von Neumann entropy (historical statement)"
-    relationship: "adapts"
-    author_endorsement: "not-contacted"
-
-  - title: "Inequalities in Matrix Algebras"
-    authors: ["E. Carlen"]
-    id: "Graduate Studies in Mathematics 251, AMS, 2025"
+  # Bridge declarations gsl_b01--gsl_b07 in Quantum/QuantumEntropy/GourResource.
+  - title: "Principles of Quantum Communication Theory: A Modern Approach"
+    authors: ["S. Khatri", "M. M. Wilde"]
+    id: "arXiv:2011.04672v2"
     type: "book"
-    location: "Theorem 7.58, Eq. (7.5.1) (general-state strong subadditivity)"
+    location: "Definitions 7.1, 7.20, 7.28 and 7.65; Propositions 7.30, 7.67 and 7.69--7.71; Theorem 7.68 (main-route bridges); Section 6.1, Theorem 6.3, Definition 6.5, Theorem 6.14, Lemma 5.5, Definitions 7.73--7.77 and Theorem 7.78 (bridges for retained peripheral results)"
     relationship: "adapts"
+    note: "Hypothesis testing and entropies, connected to the GSL formalization through seven bridge declarations."
     author_endorsement: "not-contacted"
-
-  - title: "Lean-Quantum: Toward AI-Assisted Formalization of Quantum Information"
-    authors: ["Kazumi Kasaura", "Kei Tsukamoto", "Kento Mori", "Lisa Mizuno", "Takahiro Namatame", "Yuta Oriike", "Masaya Taniguchi", "Sho Sonoda", "Hayata Yamasaki"]
-    id: "arXiv:2607.05492v1"
+  # Quantum/TraceInequality/AudenaertChernoff/GSLCore.lean (bridge gsl_b07).
+  - title: "Discriminating States: The Quantum Chernoff Bound"
+    authors: ["K. M. R. Audenaert"]
+    id: "Phys. Rev. Lett. 98, 160501 (2007)"
     type: "article"
-    location: "arXiv v1: Section 1.5, Sections 2--4 and the named Lean statements reproduced in the paper"
+    location: "Lemma 1 (Audenaert-type trace inequality)"
+    relationship: "adapts"
+    note: "Cited in the source comments as K. M. R. Audenaert et al.; only the first author is listed here."
+    author_endorsement: "not-contacted"
+  # Quantum/QuantumMechanics (states, channels, Choi and Kraus representations).
+  - title: "The Theory of Quantum Information"
+    authors: ["John Watrous"]
+    id: "Cambridge University Press, 2018"
+    type: "book"
+    location: "Quantum states and channels; Choi and Kraus representations (numbered locations as cited in the source comments)"
+    relationship: "adapts"
+    note: "The source comments of the ordered-cone max-relative entropy in Quantum/OperationalProbabilistic also cite \"Watrous, Lecture 2\"; that reference is not identified with this book."
+    author_endorsement: "not-contacted"
+  # Quantum/OperationalProbabilistic (namespace OPT).
+  - title: "Informational derivation of Quantum Theory"
+    authors: ["G. Chiribella", "G. M. D'Ariano", "P. Perinotti"]
+    id: "arXiv:1011.6451"
+    type: "article"
+    location: "Section II"
     relationship: "background"
-    author_endorsement: "participated"
-
-  - title: "Hilbert spaces and linear operators"
-    authors: ["Hiai", "Yanagi"]
-    id: "Ohmsha, 2021"
-    type: "book"
-    location: "Section 5.1; Lemma 5.1.6; Theorem 5.1.7"
-    relationship: "adapts"
+    note: "Conceptual background of the operational-probabilistic layer (namespace OPT) through which the Khatri--Wilde model is connected; the GSL theorems are statements about finite-dimensional quantum systems. The arXiv version and page numbers are not confirmed."
     author_endorsement: "not-contacted"
-
-classification:
-  arxiv: ["quant-ph", "math.OA", "math-ph", "math.FA"] # Subject classifications.
-  msc2020: ["81P17", "47A63", "81P47", "94A17", "81P45", "47A60", "47B65"]
-
-automation:
-  methods:
-    - method: "agent"
-      models: ["Anthropic Claude (Opus 4 series through Fable 5.x)", "OpenAI GPT (GPT-5 series through GPT-6)"]
-      framework: "Claude Code (Anthropic) and Codex CLI (OpenAI)"
-      tool_setup: >-
-        Human-designed decomposition of the mathematical proofs into small statements
-        with stable interfaces and theorem skeletons exposing the intended dependency
-        graph; AI assistance was used for local proof search, lemma discovery, and
-        code fragments compatible with the fixed interfaces. Statement design remained
-        human-guided.
-      prompting_notes: >-
-        Statement-first workflow: statements and interfaces were fixed before proof
-        search; each task was a fixed-interface proof or lemma request checked by
-        lake build.
-  spend_usd: >-
-    Mostly subscription-based usage (Claude Code and Codex CLI plans); some
-    contributors also used pay-as-you-go API access, whose spend was not tracked
-    separately.
-  notes: >-
-    Human authors set scope, decomposed proofs, froze statements, and reviewed all
-    public prose. Models were updated during the project as new releases became
-    available (roughly GPT-5 to GPT-6 on the OpenAI side and Claude Opus 4 to
-    Claude Fable 5.x on the Anthropic side); no single model version produced the
-    whole development. The final statement/solution pairs were replayed through
-    Lean's kernel and the independent nanoda kernel via Comparator.
-
+  # Quantum/OperationalProbabilistic/Framework/QuantumRelativeEntropyLaws/GSLCore.lean.
+  - title: "Quantum Relative Entropy: An Axiomatic Approach"
+    authors: ["M. Tomamichel"]
+    id: "QMath Masterclass notes, Copenhagen, August 2022"
+    type: "lecture notes"
+    location: "Lemma 1.1 (binary calibration giving -log2 p; OPT.binaryCalibration_eq_negLog2)"
+    relationship: "adapts"
+    note: "Page numbers and any arXiv identifier are not confirmed."
+    author_endorsement: "not-contacted"
+  # Earlier Lean formalization; not a mathematical source.
+  - title: "A formalization of the generalized quantum Stein's lemma in Lean"
+    authors: ["A. Meiburg", "L. A. Lessa", "R. R. Soldati"]
+    id: "arXiv:2510.08672"
+    type: "article"
+    location: "Lean-QuantumInfo (https://github.com/Timeroot/Lean-QuantumInfo), now part of Physlib; compared at Physlib revision 7c26cf8b47ab"
+    relationship: "other"
+    note: "Earlier Lean formalization of the Hayashi--Yamasaki proof, listed to distinguish it from the mathematical sources above. This repository follows the same proof; no transport between the two libraries is implemented."
+    author_endorsement: "n/a"
 status:
   scope: >-
-    The proved scope comprises the 34 theorems in ComparatorChallenges.Paper1Solution,
-    all checked with Comparator, and their supporting Quantum modules.
-    The Umegaki DPI is obtained from sandwiched Renyi data processing and the
-    alpha-one limit.
-    The separately compiled Challenge fixture contains statements only and is
-    excluded from the proof sorry count.
-  sorry_count: 0 # proof scope; the 34 statement fixtures in Paper1.lean are sorry by design
-  sorry_in_definitions: 0
-  axioms: ["propext", "Classical.choice", "Quot.sound"]
+    19 comparator theorem targets (ComparatorChallenges/Paper2.lean).
+    All 26 separate GSL verification roots are retained.
+    Intentional challenge placeholders and invalid control solutions are outside
+    the proof scope. Frontier proposition definitions do not assert proofs.
+  sorry_count: 0 # The 19 positive solution targets, not the whole tree.
+  sorry_in_definitions: 0 # Shared definitions used by those targets.
+  axioms: ["propext", "Quot.sound", "Classical.choice"]
   main_results:
-    - declaration: "ComparatorChallenges.Paper1.cp_iff_tensor"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.gsl_y54"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.cp_iff_choi"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.gsl_y53"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.cp_iff_kraus"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.gsl_y55"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.cp_iff_rank_kraus"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.strongSubadditivity_of_state"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.cp_iff_stinespring"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.strictDPIEquivalences"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.cp_iff_rank_stinespring"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.outputSupportDPIEquivalences"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.power_Icc_zero_one_operatorMonotoneOn_Ici"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.monotoneOnPosDef_of_sandwiched"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.operatorConcaveOn_rpow_Ici"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.monotoneOnPosDef_of_petz"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.operatorConvexOn_rpow_Ici"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.monotoneOnPosDef"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.monotoneOnNonNeg"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.operatorConcaveOn_neg_rpow_Ioi"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.loewnerUnitIntervalFourConditions"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jensenColumn_of_opConvexIciAll"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.unitIntervalPickExtension_iff_integralRep"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jointlyConvexOn_generalizedPerspective_psdSet_pdSet"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.operatorMonotoneOnUnitInterval_of_integralRep"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jointlyConcaveOn_generalizedPerspective_psdSet_pdSet"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.strictDPIEquivalences_via_hansenPedersen"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jointlyConcaveOn_liebTraceMap_pdSetLM"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.outputSupportDPIEquivalences_via_hansenPedersen"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jointlyConvexOn_liebTraceMap_pdSetLM"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.strictDPIEquivalences_via_loewner"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jointlyConvexOn_andoTraceMap_pdSetLM"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.outputSupportDPIEquivalences_via_loewner"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.sandwichedRenyiDiv_monotone"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.monotoneOnPosDef_via_sandwichedRenyi"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.sandwichedRenyiDivNN_monotone"
-      file: "ComparatorChallenges/Paper1Solution.lean"
+    - declaration: "ComparatorChallenges.Paper2.monotoneOnPosDef_via_hiaiPetz"
+      file: "ComparatorChallenges/Paper2Solution.lean"
       sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.strongSubadditivity_of_state"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.tendsto_sandwichedRenyiDiv_umegakiNorm_right"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.tendsto_sandwichedRenyiDiv_umegakiNorm_of_pd"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.sandwichedRenyiDivNN_tripartiteSSA"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.sandwichedRenyiDiv_tripartiteSSA"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.OperatorConvex.eq_zero_of_nontrivial"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.OperatorConcave.eq_zero_of_nontrivial"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.OperatorConvexAll.eq_zero"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.OperatorConcaveAll.eq_zero"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.operatorConvexOnAll_Ici_sq"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jensenFinite_of_opConvexIciAll"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.sandwichedRenyiDivNN_monotone_of_isDensity"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.tendsto_sandwichedRenyiDiv_umegakiNorm_of_supportLE"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jensenFinite_of_opConvexOnAll_of_isOpen"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-    - declaration: "ComparatorChallenges.Paper1.jensenFinite_of_opConvexOnAll_of_endpoints"
-      file: "ComparatorChallenges/Paper1Solution.lean"
-      sorry_count: 0
-
 statements:
-  - file: "ComparatorChallenges/Paper1.lean"
+  - file: "ComparatorChallenges/Paper2.lean"
     role: "statements"
-    declaration_count: 34
-    placeholder_sorry_count: 34
-    note: "A separate fixture with the same declaration names as Paper1Solution."
-
+    declaration_count: 19
+    placeholder_sorry_count: 19
+    note: "Separate fixture with the same names as Paper2Solution; shared vocabulary."
 fidelity:
   divergences: >-
-    Declaration docstrings record source-specific qualifications, including
-    arbitrary bases, fixed algebra domains, total functional calculus,
-    real parts of traces, and conventions for nonnegative inputs.
-    Chapter-level references do not assert numbered theorem correspondences.
-    The two-sided alpha-one limit to normalized Umegaki relative entropy covers
-    nonzero PSD inputs with support inclusion; the two positive-definite roots
-    are kept. The five theorems on the unrestricted predicates do not assert
-    standard operator convexity or concavity.
-    Finite Jensen is available on open intervals containing zero without an
-    explicit continuity assumption, and on general order-connected intervals
-    containing zero with continuity within the interval assumed at included
-    endpoints; interior continuity is derived from uniform operator convexity.
-
+    GSL rates use base-2 logarithms.
+    In the four-condition Loewner theorem, the Loewner-matrix condition assumes only
+    differentiability on (-1,1); Simon's Theorem 5.1 is cited for C1 functions.
 review:
   status: "self-assessed"
   reviewers: []
-  notes: "Self-assessed by the formalization authors: statements were compared against the accompanying paper, and the 34 theorems were replayed through Lean's kernel and the independent nanoda kernel via Comparator."
+  notes: >-
+    See Checking with Comparator in README.md and ComparatorChallenges/Paper2.lean for the
+    19 theorem targets and how they are checked.

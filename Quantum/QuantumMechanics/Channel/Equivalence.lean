@@ -6,11 +6,6 @@ Authors: Hayata Yamasaki
 
 import Quantum.QuantumMechanics.Channel.ChoiKraus
 
--- `cp_iff_choi` and `cp_iff_rank_kraus` retain explicit finite-index binders.
--- Suppress type-only unused-binder checks to preserve these signatures.
-set_option linter.unusedDecidableInType false
-set_option linter.unusedFintypeInType false
-
 /-!
 Stinespring implications and complete-positivity equivalence closure.
 -/
@@ -31,8 +26,8 @@ variable {ι : Type*} [DecidableEq ι] [Fintype ι]
 /--
 Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press, 2018), Eq.
 (2.71) / Theorem 2.22 / Corollary 2.27. The diagonal specialization A=B of Eq. (2.71) is adopted as
-the definition. It packages the diagonal condition of Theorem 2.22,
-without including the TP property, isometry, or minimality.
+the definition. It packages the diagonal condition of Theorem 2.22, without including the TP
+property, isometry, or minimality.
 -/
 def StinespringRep (Φ : T ℋ₁ ℋ₂) (ℋ₃ : Type u) [Qudit ℋ₃] : Prop :=
   ∃ A : ℋ₁ →ₗ[ℂ] (ℋ₂ ⊗[ℂ] ℋ₃),
@@ -55,37 +50,15 @@ def HasRankStinespring (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
     Module.finrank ℂ ℋ₃ = choiRank b Φ ∧
       @StinespringRep ℋ₁ ℋ₂ _ _ Φ ℋ₃ inst
 
-lemma stinespring_cstarMatrix_nonneg
-    {ℋ₃ : Type u} [Qudit ℋ₃]
-    (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) (hΦ : StinespringRep Φ ℋ₃) :
-    ∀ (k : ℕ) (M : CStarMatrix (Fin k) (Fin k) (L ℋ₁)),
-      0 ≤ M → 0 ≤ M.map Φ := by
-  obtain ⟨A, hA⟩ := hΦ
-  let K : T ℋ₁ (ℋ₂ ⊗[ℂ] ℋ₃) := krausTerm A
-  have hΦeq : Φ = (traceOutRight (ℋ₂ := ℋ₂) (ℋ₃ := ℋ₃)).comp K := by
-    apply LinearMap.ext
-    intro X
-    rw [hA X]
-    simp [K, krausTerm, LinearMap.comp_assoc]
-  have hCP : IsCompletelyPositive
-      Φ := by
-    rw [hΦeq]
-    exact isCompletelyPositive_comp K (traceOutRight (ℋ₂ := ℋ₂) (ℋ₃ := ℋ₃))
-      (isCompletelyPositive_krausTerm A)
-      (cp_traceOutRight (stdOrthonormalBasis ℂ ℋ₃))
-  exact (isCompletelyPositive_iff_cstarMatrix_nonneg Φ).mp hCP
-
 theorem hasStinespring_of_hasRankStinespring
     (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
     HasRankStinespring b Φ → HasStinespring Φ := by
   rintro ⟨ℋ₃, inst, _, hstinespring⟩
   exact ⟨ℋ₃, inst, hstinespring⟩
 
-/-- Amplification positivity applied to the vectorized identity's outer product
-gives positivity of the Choi operator.
-Source: this paper, arXiv:2607.05492v1, the implication from positivity of the amplification to Choi
-positivity in §2.B, p.12. The displayed theorem
-(no separate number).
+/--
+Source: arXiv:2607.05492v1, the implication from positivity of the amplification to Choi positivity
+in §2.B, p.12. Displayed theorem `tensor_to_choi` (no separate number).
 -/
 theorem choiPositive_of_amplificationPositive
     (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
@@ -95,10 +68,10 @@ theorem choiPositive_of_amplificationPositive
     (outer_product_self_nonneg (vec b (I ℋ₁)))
 
 -- (1) → (2)
-/-- Complete positivity implies positivity of the amplification by `cp_amplify`.
-Source: this paper, arXiv:2607.05492v1, the implication from complete positivity to positivity of
-the amplification in §2.B, p.12. The displayed theorem
-(no separate number).
+/--
+Source: arXiv:2607.05492v1, the implication from complete positivity to positivity of the
+amplification in §2.B, p.12. Displayed theorem
+`cp_to_tensor` (no separate number).
 -/
 theorem amplificationPositive_of_cp
     (Φ : T ℋ₁ ℋ₂) :
@@ -106,11 +79,10 @@ theorem amplificationPositive_of_cp
   exact cp_amplify Φ
 
 -- (3) → (5)
-/-- Decompose the positive Choi operator into a rank-controlled sum of outer
-products, then convert this decomposition to Kraus operators.
-Source: this paper, arXiv:2607.05492v1, the implication from Choi positivity to a Kraus
-representation with a rank condition in §2.B, p.12. The displayed theorem
-(no separate number).
+/--
+Source: arXiv:2607.05492v1, the implication from Choi positivity to a Kraus representation with a
+rank condition in §2.B, p.12. Displayed theorem
+`choi_to_rank_kraus` (no separate number).
 -/
 theorem hasRankKraus_of_choiPositive
     (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
@@ -124,11 +96,6 @@ theorem hasRankKraus_of_choiPositive
   · exact hcard
   · exact choi_outer_product_to_kraus b Φ u hu
 
-theorem choi_iff_rank_kraus
-    (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
-    ChoiPositive b Φ ↔ HasRankKraus b Φ := by
-  exact ⟨hasRankKraus_of_choiPositive b Φ, choiPositive_of_hasRankKraus b Φ⟩
-
 theorem isPositiveMap_of_choiPositive
     (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
     ChoiPositive b Φ → IsPositiveMap Φ :=
@@ -140,18 +107,6 @@ theorem hasKraus_of_choiPositive
     ChoiPositive b Φ → HasKraus Φ :=
   hasKraus_of_hasRankKraus b Φ ∘
     hasRankKraus_of_choiPositive b Φ
-
-/--
-Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press,
-2018), Theorem 2.22. Partial correspondence to the equivalence between the Choi and Kraus
-conditions. Generalized to an arbitrary algebraic basis, agreeing at the standard basis. The zero
-map and zero dimensions are also allowed.
--/
-theorem choi_iff_kraus
-    (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
-    ChoiPositive b Φ ↔ HasKraus Φ := by
-  exact ⟨hasKraus_of_choiPositive b Φ, choiPositive_of_hasKraus b Φ⟩
-
 
 theorem conjugate_kraus_expansion
     {κ : Type u} [DecidableEq κ] [Fintype κ]
@@ -247,11 +202,10 @@ theorem hasStinespring_of_hasKraus
     stinespringRep_of_krausRep (ℋ₁ := ℋ₁) (ℋ₂ := ℋ₂) Φ hΦ⟩
 
 -- (5) → (7)
-/-- Construct the Stinespring representation from the Kraus operators and
-identify the environment dimension with the cardinality of their index type.
-Source: this paper, arXiv:2607.05492v1, the implication from a Kraus representation with a rank
-condition to a Stinespring representation in §2.B, p.12. The displayed theorem
-(no separate number).
+/--
+Source: arXiv:2607.05492v1, the implication from a Kraus representation with a rank condition to a
+Stinespring representation in §2.B, p.12. Displayed theorem
+`rank_kraus_to_rank_stinespring` (no separate number).
 -/
 theorem hasRankStinespring_of_hasRankKraus
     (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
@@ -308,23 +262,6 @@ theorem isPositiveMap_of_amplificationPositive
   isPositiveMap_of_hasKraus Φ ∘
     hasKraus_of_amplificationPositive Φ
 
-/-! ### Complete positivity equivalence closure -/
--- (6) → (1)
-theorem cp_of_hasStinespring
-    (Φ : T ℋ₁ ℋ₂) :
-    HasStinespring Φ → IsCompletelyPositive Φ := by
-  rintro ⟨ℋ₃, inst, hΦ⟩
-  letI : Qudit ℋ₃ := inst
-  exact (isCompletelyPositive_iff_cstarMatrix_nonneg Φ).mpr
-    (stinespring_cstarMatrix_nonneg Φ hΦ)
-
-theorem cp_of_amplificationPositive
-    (b : Module.Basis ι ℂ ℋ₁) (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) :
-    AmplificationPositive Φ → IsCompletelyPositive Φ :=
-  cp_of_hasStinespring Φ ∘
-    hasStinespring_of_choiPositive b Φ ∘
-    choiPositive_of_amplificationPositive b Φ
-
 theorem choiPositive_of_cp
     (b : Module.Basis ι ℂ ℋ₁) (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) :
     IsCompletelyPositive Φ → ChoiPositive b Φ :=
@@ -337,16 +274,22 @@ theorem hasRankKraus_of_cp
   hasRankKraus_of_choiPositive b Φ ∘
     choiPositive_of_cp b Φ
 
-theorem hasKraus_of_cp
+omit [DecidableEq ι] [Fintype ι] in
+theorem hasKraus_of_cp [Finite ι]
     (b : Module.Basis ι ℂ ℋ₁) (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) :
-    IsCompletelyPositive Φ → HasKraus Φ :=
-  hasKraus_of_hasRankKraus b Φ ∘
+    IsCompletelyPositive Φ → HasKraus Φ := by
+  classical
+  have := Fintype.ofFinite ι
+  exact hasKraus_of_hasRankKraus b Φ ∘
     hasRankKraus_of_cp b Φ
 
-theorem hasStinespring_of_cp
+omit [DecidableEq ι] [Fintype ι] in
+theorem hasStinespring_of_cp [Finite ι]
     (b : Module.Basis ι ℂ ℋ₁) (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) :
-    IsCompletelyPositive Φ → HasStinespring Φ :=
-  hasStinespring_of_hasKraus Φ ∘
+    IsCompletelyPositive Φ → HasStinespring Φ := by
+  classical
+  have := Fintype.ofFinite ι
+  exact hasStinespring_of_hasKraus Φ ∘
     hasKraus_of_cp b Φ
 
 theorem hasRankStinespring_of_cp
@@ -354,14 +297,6 @@ theorem hasRankStinespring_of_cp
     IsCompletelyPositive Φ → HasRankStinespring b Φ :=
   hasRankStinespring_of_hasRankKraus b Φ ∘
     hasRankKraus_of_cp b Φ
-
-theorem cp_of_choiPositive
-    (b : Module.Basis ι ℂ ℋ₁) (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) :
-    ChoiPositive b Φ → IsCompletelyPositive Φ :=
-  cp_of_hasStinespring Φ ∘
-    hasStinespring_of_hasRankStinespring b Φ ∘
-    hasRankStinespring_of_hasRankKraus b Φ ∘
-    hasRankKraus_of_choiPositive b Φ
 
 theorem cp_of_hasKraus
     (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) :
@@ -377,15 +312,8 @@ theorem cp_of_hasRankKraus
   intro hΦ
   exact cp_of_hasKraus Φ (hasKraus_of_hasRankKraus b Φ hΦ)
 
-theorem cp_of_hasRankStinespring
-    (b : Module.Basis ι ℂ ℋ₁) (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) :
-    HasRankStinespring b Φ → IsCompletelyPositive Φ :=
-  cp_of_hasStinespring Φ ∘
-    hasStinespring_of_hasRankStinespring b Φ
-
 /--
-Source: this paper, arXiv:2607.05492v1, formalization of the main results in §2 (no individual paper
-theorem number is assigned).
+Source: arXiv:2607.05492v1, §2.
 -/
 theorem cp_iff_tensor
     (Φ : T ℋ₁ ℋ₂) :
@@ -395,18 +323,7 @@ theorem cp_iff_tensor
   exact cp_of_hasKraus Φ (hasKraus_of_amplificationPositive Φ hTensor)
 
 /--
-Source: this paper, arXiv:2607.05492v1, formalization of the main results in §2 (no individual paper
-theorem number is assigned).
--/
-theorem cp_iff_choi
-    {κ : Type*} [DecidableEq κ] [Fintype κ]
-    (b : Module.Basis κ ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
-    IsCompletelyPositive Φ ↔ ChoiPositive b Φ := by
-  exact ⟨choiPositive_of_cp b Φ, cp_of_choiPositive b Φ⟩
-
-/--
-Source: this paper, arXiv:2607.05492v1, formalization of the main results in §2 (no individual paper
-theorem number is assigned).
+Source: arXiv:2607.05492v1, §2.
 -/
 theorem cp_iff_kraus
     (Φ : T ℋ₁ ℋ₂) :
@@ -415,8 +332,7 @@ theorem cp_iff_kraus
     cp_of_hasKraus Φ⟩
 
 /--
-Source: this paper, arXiv:2607.05492v1, formalization of the main results in §2 (no individual paper
-theorem number is assigned).
+Source: arXiv:2607.05492v1, §2.
 -/
 theorem cp_iff_rank_kraus
     {κ : Type*} [DecidableEq κ] [Fintype κ]
@@ -424,28 +340,6 @@ theorem cp_iff_rank_kraus
     IsCompletelyPositive Φ ↔ HasRankKraus b Φ := by
   exact ⟨hasRankKraus_of_cp b Φ,
     cp_of_hasRankKraus b Φ⟩
-
-/--
-Source: this paper, arXiv:2607.05492v1, formalization of the main results in §2 (no individual paper
-theorem number is assigned).
--/
-theorem cp_iff_stinespring
-    (Φ : T ℋ₁ ℋ₂) :
-    IsCompletelyPositive Φ ↔ HasStinespring Φ := by
-  exact ⟨hasStinespring_of_amplificationPositive Φ ∘ amplificationPositive_of_cp Φ,
-    cp_of_hasStinespring Φ⟩
-
-/--
-Source: this paper, arXiv:2607.05492v1, formalization of the main results in §2 (no individual paper
-theorem number is assigned).
--/
-theorem cp_iff_rank_stinespring
-    {κ : Type*} [DecidableEq κ] [Fintype κ]
-    (b : Module.Basis κ ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
-    IsCompletelyPositive Φ ↔ HasRankStinespring b Φ := by
-  exact ⟨hasRankStinespring_of_cp b Φ,
-    cp_of_hasRankStinespring b Φ⟩
-
 
 /-! ### Trace-preserving channel representation notes -/
 -- Theorem 2.26 https://cs.uwaterloo.ca/~watrous/TQI/TQI.2.pdf

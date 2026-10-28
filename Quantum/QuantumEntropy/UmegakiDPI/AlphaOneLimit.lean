@@ -1,18 +1,30 @@
-import Quantum.QuantumMechanics.QuantumState
-import Quantum.QuantumMechanics.OperatorNotation
-import Quantum.QuantumMechanics.OperatorInstances
+import Quantum.QuantumEntropy.SandwichedRenyiBase.Umegaki.AlphaOne
+import Quantum.QuantumEntropy.UmegakiDPI.ViaPetz.UmegakiLimit
+import Quantum.QuantumEntropy.Common.TensorDensitySupport.GSLCoreGeneralizedStein
+import Quantum.QuantumEntropy.Common.TraceReGeneralizedStein
+import Quantum.QuantumEntropy.RenyiDPI.Petz.Provider
+import Quantum.QuantumEntropy.RenyiDPI.Sandwiched.LiebAndo.NonNeg.Continuity
 import Quantum.QuantumEntropy.UmegakiDPI.AlphaOneCore
-import Quantum.QuantumEntropy.SandwichedRenyi.NonNeg.Monotonicity
-import Quantum.QuantumEntropy.SandwichedRenyi.DefinitionCore
-import Quantum.QuantumEntropy.Common.TracePositiveDefinite
-import Quantum.QuantumEntropy.Common.PositiveDefiniteSet
-import Quantum.QuantumEntropy.SandwichedRenyi.Umegaki.AlphaOneLinear
+import Quantum.QuantumEntropy.UmegakiDPI.ViaSandwiched.FromRenyi.GSLCore
+import Quantum.TraceInequality.HansenPedersen.QuasiEntropyDataProcessing.HilbertSchmidt.Adjoint
+import Quantum.TraceInequality.HansenPedersen.QuasiEntropyDataProcessing.Main
+import Quantum.TraceInequality.HansenPedersen.QuasiEntropyDataProcessing.OutputSupport.Reduction
+import
+  Quantum.TraceInequality.HiaiPetz.Ambient.TwoBlockDiagOrthogonalTransport.OrthogonalConjugation
+import Quantum.TraceInequality.HiaiPetz.Ambient.TwoBlockDiagProjection
+import Quantum.TraceInequality.HiaiPetz.Ambient.TwoBlockDiagSpectralTransportRetained
+import Quantum.TraceInequality.HiaiPetz.AmbientSubmodule
+import Quantum.TraceInequality.HiaiPetz.HilbertSchmidt.Order
+import Quantum.TraceInequality.HiaiPetz.QuasiEntropyDataProcessing.SharedStages
+import Quantum.TraceInequality.HiaiPetz.TraceMonotonicity.StrictlyPositiveRetained
+import Quantum.TraceInequality.Loewner.RealComplexOrder
 
 /-!
 # Two-sided alpha-one limit on the positive-definite domain
 
 Source: arXiv:2607.05492v1, main.tex:219.
-`tendsto_sandwichedRenyiDiv_umegakiNorm_right` is a right limit for positive-definite inputs.
+The existing tracePower quotient is a Petz-type left difference quotient, and
+`sandwichedRenyiDiv_tendsto_umegaki` is a right limit for positive-definite inputs.
 This module establishes the two-sided punctured limit on that same domain.
 It does not establish the nonzero, support-included singular-input limit.
 
@@ -33,9 +45,9 @@ variable {H : Type u} [Qudit H] [Nontrivial H]
 
 /-- The two-sided punctured alpha-one limit, for positive-definite inputs only.
 Source: main.tex:219; Müller-Lennert et al. (2013), alpha-one analysis.
-This is a restricted result and does not cover singular inputs. -/
-theorem tendsto_sandwichedRenyiDiv_umegakiNorm_of_pd {ρ σ : L H}
-    (hρ : ρ ∈ pdSetLM) (hσ : σ ∈ pdSetLM) :
+This restricted result does not cover the singular-input support-domain alpha-one limit
+(arXiv:2607.05492v1, Section 1.5). -/
+theorem sandwichedRenyi_tendsto_umegaki_of_pd {ρ σ : L H} (hρ : ρ ∈ pdSetLM) (hσ : σ ∈ pdSetLM) :
     Filter.Tendsto (fun α => sandwichedRenyiDiv α ρ σ) (𝓝[≠] (1 : ℝ))
       (𝓝 (umegakiNorm ρ σ)) := by
   have hTr : 0 < (Tr ρ).re := trace_re_pos_of_pdSetLM hρ

@@ -1,0 +1,34 @@
+/-
+Copyright (c) 2026 Hayata Yamasaki. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Hayata Yamasaki
+-/
+
+import Quantum.TraceInequality.HiaiPetz.BlockSumBase
+import Quantum.TraceInequality.HiaiPetz.ConditionVocabulary
+import Quantum.TraceInequality.HiaiPetz.Ambient.MatrixInstances
+import Quantum.TraceInequality.HiaiPetz.Ambient.TwoBlockDiagOrthogonalTransport
+import Quantum.TraceInequality.HiaiPetz.JArgAction
+import Quantum.TraceInequality.HansenPedersen.MatrixFunctionalCalculus
+import Quantum.TraceInequality.HiaiPetzTheorem.MatrixFunctionalCalculus
+import Quantum.TraceInequality.HiaiPetz.MatrixFunctionalCalculus
+import Quantum.TraceInequality.HiaiPetz.MatrixFunctionalCalculusRetained
+import
+Quantum.TraceInequality.HansenPedersen.QuasiEntropyDataProcessing.StrictlyPositive.MonotoneToDirect
+import Quantum.TraceInequality.HansenPedersen.QuasiEntropyDataProcessing.Conditions
+import Quantum.TraceInequality.HansenPedersen.QuasiEntropyDataProcessing.StandardRectangle.Main
+import
+Quantum.TraceInequality.HansenPedersen.QuasiEntropyDataProcessing.StandardRectangle.DirectToInverse
+import Quantum.TraceInequality.HansenPedersen.LaterConsequences
+import Quantum.TraceInequality.LaterConsequencesRetained
+import Mathlib.Analysis.Matrix.Order
+import Mathlib.Analysis.Matrix.PosDef
+import Mathlib.LinearAlgebra.Matrix.ConjTranspose
+import Quantum.TraceInequality.HiaiPetzTheorem.QuasiEntropyDataProcessing.JointToMonotone
+import Quantum.TraceInequality.HansenPedersen.QuasiEntropyDataProcessing.HilbertSchmidt.Adjoint
+import
+  Quantum.TraceInequality.HiaiPetz.Ambient.TwoBlockDiagOrthogonalTransport.OrthogonalConjugation
+import Quantum.TraceInequality.HiaiPetz.Ambient.TwoBlockDiagProjection
+import Quantum.TraceInequality.HiaiPetz.Ambient.TwoBlockDiagSpectralTransportRetained
+import Quantum.TraceInequality.HiaiPetz.HilbertSchmidt.Order
+import Quantum.TraceInequality.TraceFunctionMonotonicity.SharedVocabulary

@@ -9,9 +9,8 @@ import Quantum.QuantumEntropy.Common.TracePositiveDefinite
 /-!
 # Support inclusion for non-negative quantum divergences
 
-This lightweight module owns the support predicate used by the route-neutral
-Umegaki interface.  It deliberately does not import finite-`α` monotonicity or
-the max-relative entropy endpoint.
+Support inclusion is expressed by the reverse inclusion of the kernels
+of two nonnegative operators.
 -/
 
 namespace SandwichedRenyiRelativeEntropy

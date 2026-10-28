@@ -7,11 +7,6 @@ Authors: Hayata Yamasaki
 import Quantum.QuantumMechanics.Channel.Representations
 import Mathlib.Analysis.InnerProductSpace.Trace
 
--- Choi--Kraus lemmas retain the finite-index binders used by `KrausRep`.
--- Suppress type-only unused-binder checks for these explicit instances.
-set_option linter.unusedDecidableInType false
-set_option linter.unusedFintypeInType false
-
 /-!
 Choi expansion, injectivity, Kraus recovery, and the right partial trace as a Kraus map.
 -/
@@ -44,9 +39,6 @@ lemma endomorphismTensorEquiv_symm_outer_product
   · intro z₁ z₂ hz₁ hz₂
     simp [hz₁, hz₂]
 
-@[deprecated endomorphismTensorEquiv_symm_outer_product (since := "2026-09-26")]
-alias l_tensor_equiv_symm_outer_product := endomorphismTensorEquiv_symm_outer_product
-
 lemma endomorphismTensorEquiv_outer_product_tmul
     {E : Type u} {F : Type v} [Qudit E] [Qudit F]
     (u v : E) (x y : F) :
@@ -56,9 +48,6 @@ lemma endomorphismTensorEquiv_outer_product_tmul
   apply (endomorphismTensorEquiv (ℋ₁ := E) (ℋ₂ := F)).symm.injective
   rw [LinearEquiv.symm_apply_apply]
   exact (endomorphismTensorEquiv_symm_outer_product (E := E) (F := F) u v x y).symm
-
-@[deprecated endomorphismTensorEquiv_outer_product_tmul (since := "2026-09-26")]
-alias l_tensor_equiv_outer_product_tmul := endomorphismTensorEquiv_outer_product_tmul
 
 /--
 Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press, 2018), Eq.
@@ -89,7 +78,7 @@ lemma choi_basis_expansion
 
 lemma tensor_basis_sum_coeff
     {E : Type u} {F : Type v} [Qudit E] [Qudit F]
-    {ι : Type*} [DecidableEq ι] [Fintype ι]
+    {ι : Type*} [Fintype ι]
     (b : Module.Basis ι ℂ E) (p q : ι) (S : ι → ι → L F) :
     (TensorProduct.rid ℂ (L F) : (L F ⊗[ℂ] ℂ) →ₗ[ℂ] L F)
       ((TensorProduct.map LinearMap.id
@@ -200,9 +189,8 @@ lemma outer_product_vec_expansion
       (fun i : ι => A (b i) ⊗ₜ[ℂ] b i)]
   simp_rw [← endomorphismTensorEquiv_symm_outer_product]
 
--- The triple finite-sum expansion and reindexing need the enlarged heartbeat budget.
 lemma choi_kraus_expansion
-    {κ : Type u} [DecidableEq κ] [Fintype κ]
+    {κ : Type u} [Fintype κ]
     (b : Module.Basis ι ℂ ℋ₁) (A : κ → (ℋ₁ →ₗ[ℂ] ℋ₂)) :
     choi b (∑ a : κ, krausTerm (A a)) =
       ∑ a : κ, outer_product (vec b (A a)) (vec b (A a)) := by
@@ -235,7 +223,7 @@ lemma choi_kraus_expansion
           exact Finset.sum_comm
 
 lemma choi_outer_product_kraus_apply
-    {κ : Type u} [DecidableEq κ] [Fintype κ]
+    {κ : Type u} [Fintype κ]
     (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂)
     (u : κ → ℋ₂ ⊗[ℂ] ℋ₁)
     (hΦ : choi b Φ = ∑ a : κ, outer_product (u a) (u a))
@@ -270,38 +258,7 @@ lemma choi_outer_product_to_kraus
   intro X
   exact choi_outer_product_kraus_apply b Φ u hΦ X
 
-theorem choiPositive_of_krausRep
-    {κ : Type u} [DecidableEq κ] [Fintype κ]
-    (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
-    KrausRep Φ κ → ChoiPositive b Φ := by
-  rintro ⟨A, hA⟩
-  have hΦ :
-      Φ = ∑ a : κ, krausTerm (A a) := by
-    apply LinearMap.ext
-    intro X
-    simpa [krausTerm] using hA X
-  rw [hΦ]
-  rw [ChoiPositive, choi_kraus_expansion]
-  exact Finset.sum_nonneg fun a _ =>
-    outer_product_self_nonneg (vec b (A a))
-
-theorem choiPositive_of_hasKraus
-    (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
-    HasKraus Φ → ChoiPositive b Φ := by
-  rintro ⟨κ, hκ, hκ', hΦ⟩
-  letI : DecidableEq κ := hκ
-  letI : Fintype κ := hκ'
-  exact choiPositive_of_krausRep b Φ hΦ
-
-theorem choiPositive_of_hasRankKraus
-    (b : Module.Basis ι ℂ ℋ₁) (Φ : T ℋ₁ ℋ₂) :
-    HasRankKraus b Φ → ChoiPositive b Φ :=
-  choiPositive_of_hasKraus b Φ ∘
-    hasKraus_of_hasRankKraus b Φ
-
 /-! ### Right partial trace as a Kraus map -/
--- The `rw` steps use the normal forms produced by the preceding `simp` calls.
-set_option linter.flexible false in
 lemma endomorphismTensorEquiv_symm_outer_product_apply
     {E : Type u} {F : Type v} [Qudit E] [Qudit F]
     (u v x : E) (T : L F) (y : F) :
@@ -313,12 +270,10 @@ lemma endomorphismTensorEquiv_symm_outer_product_apply
   rw [TensorProduct.tmul_sum]
   rw [map_sum]
   simp only [LinearMap.sum_apply, endomorphismTensorEquiv_symm_outer_product]
-  simp [outer_product_eq_rankOne, TensorProduct.inner_tmul]
+  simp only [outer_product_eq_rankOne, ContinuousLinearMap.coe_coe,
+    InnerProductSpace.rankOne_apply, TensorProduct.inner_tmul]
   rw [TensorProduct.tmul_sum]
   simp [smul_tmul', smul_smul, mul_comm]
-
-@[deprecated endomorphismTensorEquiv_symm_outer_product_apply (since := "2026-09-26")]
-alias l_tensor_equiv_symm_outer_product_apply := endomorphismTensorEquiv_symm_outer_product_apply
 
 lemma ite_tmul_zero_left
     {E : Type u} {F : Type v}
@@ -359,14 +314,6 @@ noncomputable def tensorRightSlice
     E ⊗[ℂ] F →ₗ[ℂ] E :=
   (TensorProduct.rid ℂ E : (E ⊗[ℂ] ℂ) →ₗ[ℂ] E) ∘ₗ
     TensorProduct.map LinearMap.id (b.toBasis.coord i)
-
-lemma tensorRightSlice_tmul
-    {κ : Type*} [Fintype κ]
-    {E : Type u} {F : Type v} [Qudit E] [Qudit F]
-    (b : OrthonormalBasis κ ℂ F) (i : κ) (x : E) (y : F) :
-    tensorRightSlice (E := E) (F := F) b i (x ⊗ₜ[ℂ] y) =
-      b.toBasis.coord i y • x := by
-  simp [tensorRightSlice]
 
 lemma tensorRightSlice_expand
     {κ : Type*} [Fintype κ]
@@ -438,10 +385,10 @@ lemma TrRight_outer_product_tmul_basis
 /--
 Source: John Watrous, "The Theory of Quantum Information" (Cambridge University Press, 2018), Eq.
 (1.121). Partial correspondence to a corollary obtained from the definition of the right partial
-trace. Expand rank-one operators in a finite orthonormal basis of the factor being traced out.
+trace. The rank-one operator is expanded in a finite orthonormal basis of the discarded factor.
 -/
 lemma TrRight_outer_product
-    {κ : Type*} [DecidableEq κ] [Fintype κ]
+    {κ : Type*} [Fintype κ]
     {E : Type u} {F : Type v} [Qudit E] [Qudit F]
     (b : OrthonormalBasis κ ℂ F) (u v : E ⊗[ℂ] F) :
     traceOutRight (ℋ₂ := E) (ℋ₃ := F) (outer_product u v) =
@@ -472,7 +419,7 @@ lemma tensorRightSlice_comp_outer_product
     (tensorRightSlice (E := E) (F := F) b i) u v
 
 lemma traceOutRight_eq_kraus_sum
-    {κ : Type*} [DecidableEq κ] [Fintype κ]
+    {κ : Type*} [Fintype κ]
     {E : Type u} {F : Type v} [Qudit E] [Qudit F]
     (b : OrthonormalBasis κ ℂ F) (X : L (E ⊗[ℂ] F)) :
     traceOutRight (ℋ₂ := E) (ℋ₃ := F) X =
@@ -500,10 +447,11 @@ theorem krausRep_traceOutRight
   exact traceOutRight_eq_kraus_sum b X
 
 theorem cp_traceOutRight
-    {κ : Type*} [DecidableEq κ] [Fintype κ]
+    {κ : Type*} [Fintype κ]
     {E : Type u} {F : Type v} [Qudit E] [Qudit F]
     (b : OrthonormalBasis κ ℂ F) :
     IsCompletelyPositive (traceOutRight (ℋ₂ := E) (ℋ₃ := F)) := by
+  classical
   exact cp_of_krausRep
     (ℋ₁ := E ⊗[ℂ] F) (ℋ₂ := E)
     (traceOutRight (ℋ₂ := E) (ℋ₃ := F))
@@ -521,20 +469,6 @@ theorem traceOutRight_le_traceOutRight
       (Y - X) (sub_nonneg.mpr hXY)
   rw [map_sub] at hpos
   exact sub_nonneg.mp hpos
-
-theorem isCompletelyPositive_comp
-    {ℋ₃ : Type w} [Qudit ℋ₃]
-    (Φ : (L ℋ₁) →ₗ[ℂ] (L ℋ₂)) (Ψ : (L ℋ₂) →ₗ[ℂ] (L ℋ₃))
-    (hΦ : IsCompletelyPositive Φ)
-    (hΨ : IsCompletelyPositive Ψ) :
-    IsCompletelyPositive (Ψ.comp Φ) := by
-  refine (isCompletelyPositive_iff_cstarMatrix_nonneg (Ψ.comp Φ)).mpr ?_
-  intro k M hM
-  rw [← show (M.map Φ).map Ψ = M.map (Ψ.comp Φ) by
-    ext i j X
-    simp [CStarMatrix.map_apply]]
-  exact (isCompletelyPositive_iff_cstarMatrix_nonneg Ψ).mp hΨ k _
-    ((isCompletelyPositive_iff_cstarMatrix_nonneg Φ).mp hΦ k M hM)
 
 end RepresentationsOfChannels
 

@@ -4,13 +4,16 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Hayata Yamasaki
 -/
 
-import Quantum.QuantumEntropy.YoungInequalityLinear
-import Quantum.TraceInequality.LiebAndo.PositiveDefiniteGeometry
-import Quantum.QuantumEntropy.TensorCFCCore
+import Quantum.QuantumEntropy.YoungInequality
+import Quantum.TraceInequality.LiebTrace.Bridge
+import Quantum.QuantumEntropy.TensorCFCUmegaki
+import Quantum.QuantumEntropy.TensorCFC
 import Quantum.QuantumMechanics.OperatorBridge
+import Mathlib.Analysis.CStarAlgebra.Unitary.Span
+import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
 
-/-! Positive-definite linear maps (LM) and continuous linear maps (CLM),
-with the continuous trace functional. -/
+/-! Positive-definite linear operators and their continuous trace functional. -/
 
 open QuantumState
 open scoped ComplexOrder NNReal Topology
@@ -25,7 +28,7 @@ universe uDef
 
 variable {ℋ : Type uDef} [Qudit ℋ]
 
-/-- The finite-dimensional trace as a continuous linear functional on bounded operators. -/
+/-- The finite-dimensional trace as a continuous linear functional on the CLM carrier. -/
 noncomputable def traceCLM : (ℋ →L[ℂ] ℋ) →L[ℂ] ℂ :=
   { toFun := fun A => LinearMap.trace ℂ ℋ (A : L ℋ)
     map_add' := fun A B => by simp
@@ -43,9 +46,9 @@ noncomputable def traceCLM : (ℋ →L[ℂ] ℋ) →L[ℂ] ℂ :=
 
 variable [Nontrivial ℋ]
 
-/-- The pullback of `pdSet` along `LinearMap.toContinuousLinearMap`. -/
+/-- The pullback of the positive-definite set along Mathlib's canonical LM-to-CLM lift. -/
 def pdSetLM : Set (L ℋ) :=
-  {A | A.toContinuousLinearMap ∈ pdSet}
+  {A | A.toContinuousLinearMap ∈ pdSet (ℋ := ℋ)}
 
 end Definition
 

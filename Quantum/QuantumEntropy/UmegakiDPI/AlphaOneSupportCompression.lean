@@ -20,7 +20,7 @@ lemma mem_spectrum_real_lm_iff {A : L H} {r : ℝ} :
 
 omit [Nontrivial H] in
 /-- The real spectrum of a finite-dimensional linear endomorphism is finite. -/
-lemma finite_spectrum_real_lm (A : L H) : Set.Finite (spectrum ℝ A) := by
+lemma spectrum_real_finite_lm (A : L H) : Set.Finite (spectrum ℝ A) := by
   have heq : spectrum ℝ A = (fun r : ℝ => (r : ℂ)) ⁻¹' spectrum ℂ A := by
     ext r
     exact mem_spectrum_real_lm_iff
@@ -59,11 +59,11 @@ lemma exists_cfc_polynomial_lm {A : L H} (hA : IsSelfAdjoint A) (f : ℝ → ℝ
     ∃ q : Polynomial ℝ, (∀ r ∈ spectrum ℝ A, q.eval r = f r) ∧
       cfc f A = Polynomial.aeval A q := by
   classical
-  let S := (finite_spectrum_real_lm A).toFinset
+  let S := (spectrum_real_finite_lm A).toFinset
   let q := Lagrange.interpolate S id f
   have he (r : ℝ) (hr : r ∈ spectrum ℝ A) : q.eval r = f r :=
     Lagrange.eval_interpolate_at_node f Function.injective_id.injOn
-      ((finite_spectrum_real_lm A).mem_toFinset.mpr hr)
+      ((spectrum_real_finite_lm A).mem_toFinset.mpr hr)
   refine ⟨q, he, ?_⟩
   calc
     cfc f A = cfc q.eval A := cfc_congr (fun r hr => (he r hr).symm)
@@ -178,7 +178,7 @@ lemma compress_sandwich {ρ σ : L H} [Nontrivial (supportSpace σ)]
   rw [← he]
   exact (supportSpace σ).starProjection_eq_self_iff.mpr (Subtype.property _)
 
-/-- Exact compression invariance, including the alpha = 1 branch. -/
+/-- C02: exact compression invariance, including the alpha = 1 branch. -/
 lemma compression_invariance {ρ σ : L H} [Nontrivial (supportSpace σ)]
     (hρ : 0 ≤ ρ) (hσ : 0 ≤ σ) (hsupp : SupportLE ρ σ) :
     Tr (compress σ ρ) = Tr ρ ∧
@@ -205,17 +205,6 @@ lemma compression_invariance {ρ σ : L H} [Nontrivial (supportSpace σ)]
     exact trace_compress CFC.rpow_nonneg hpower
   · unfold umegakiNorm
     rw [trace_compress hρ hsupp, hprod, trace_lift]
-
-
-
-
-
-
-
-
-
-
-
 
 
 end SandwichedRenyiRelativeEntropy.AlphaOneSupport

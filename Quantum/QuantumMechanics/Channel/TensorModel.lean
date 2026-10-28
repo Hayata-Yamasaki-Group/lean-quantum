@@ -4,7 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Hayata Yamasaki
 -/
 
-import Quantum.QuantumMechanics.Channel.AmplificationCore
+import Quantum.QuantumMechanics.Channel.Amplification
 
 /-!
 Tensor-model descriptions of full matrix amplifications.
@@ -23,6 +23,7 @@ variable {ℋ₁ : Type u} {ℋ₂ : Type v} [Qudit ℋ₁] [Qudit ℋ₂]
 variable {ι : Type*} [DecidableEq ι] [Fintype ι]
 
 /-! ### Tensor model for the full amplification -/
+
 noncomputable def basisPiTensorLinearEquiv
     (n : ℕ) (b : OrthonormalBasis (Fin n) ℂ ℋ₁) :
     DS n ℋ₂ ≃ₗ[ℂ] ℋ₂ ⊗[ℂ] ℋ₁ :=

@@ -1,0 +1,14 @@
+{
+  "challenge_module": "ComparatorChallenges.GslChallenge",
+  "solution_module": "ComparatorChallenges.GslSolution",
+  "theorem_names": [
+    "ComparatorChallenges.Gsl.y54",
+    "ComparatorChallenges.Gsl.y53"
+  ],
+  "permitted_axioms": [
+    "propext",
+    "Quot.sound",
+    "Classical.choice"
+  ],
+  "enable_nanoda": true
+}

@@ -14,7 +14,8 @@ import Mathlib.Topology.Algebra.Module.LinearMapPiProd
 /-!
 Data-bearing bridge instances for endomorphism algebras `L ℋ`.
 
-This file defines the norm, metric, C*-algebra, and ordered-star instances on `L ℋ`.
+This file isolates the data-bearing instance.  Possible instance diamonds with Mathlib's
+instances have not been checked systematically.
 -/
 
 namespace QuantumChannel

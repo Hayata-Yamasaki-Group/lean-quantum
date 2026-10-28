@@ -1,5 +1,9 @@
-import Quantum.QuantumEntropy.SandwichedRenyi.NonNeg.Monotonicity
+import Quantum.QuantumEntropy.SandwichedRenyi.NonNeg.Dispatcher.GSLCore
+import Quantum.QuantumEntropy.RenyiDPI.Sandwiched.LiebAndo.PositiveDefiniteCertificates
+import Quantum.QuantumEntropy.Common.PositiveDefiniteCertificatesStrongSubadditivity
+import Quantum.QuantumEntropy.Common.PositiveDefiniteCertificatesGeneralizedStein
 import Quantum.QuantumEntropy.Common.PositiveDefiniteCertificates
+
 
 /-!
 Theorem 1 with the density-operator hypotheses of the first paper.
@@ -19,24 +23,24 @@ Source: arXiv:2607.05492v1, main.tex:1656–1663. The paper assumes both
 `ρ` and `σ` are density operators and additionally that `σ` is positive
 definite. In particular, `ρ` may be singular and no output PD hypothesis
 is imposed. The conclusion uses the extended-real divergence; it is a
-specialization of `sandwichedRenyiDivNN_monotone`.
+specialization of the all-order data-processing theorem
+`RenyiDPI.sandwichedRenyiDivNN_monotone`.
 -/
-theorem sandwichedRenyiDivNN_monotone_of_isDensity
+theorem sandwichedRenyiDivNN_theorem1
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ] [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : CPTP ℋ 𝒦) {α : ℝ}
+    (E : CPTP ℋ 𝒦) {α : ℝ}
     (hα_ge : (1 : ℝ) / 2 ≤ α) (hα_ne1 : α ≠ 1)
     {ρ σ : L ℋ} (hρ : IsDensity ρ) (hσ : IsDensity σ)
     (_hσpd : IsPositiveDefinite σ) :
-    sandwichedRenyiDivNN α (Φ.toFun ρ) (Φ.toFun σ) ≤
+    sandwichedRenyiDivNN α (E.toFun ρ) (E.toFun σ) ≤
       sandwichedRenyiDivNN α ρ σ := by
-  exact sandwichedRenyiDivNN_monotone Φ hα_ge hα_ne1
+  exact RenyiDPI.sandwichedRenyiDivNN_monotone E hα_ge hα_ne1
     ((LinearMap.nonneg_iff_isPositive ρ).2 hρ.1)
     ((LinearMap.nonneg_iff_isPositive σ).2 hσ.1)
 
 /-- The NN divergence agrees with the real analytic definition on PD pairs.
-Source: arXiv:2607.05492v1, main.tex:1664–1683; relates
-`sandwichedRenyiDivNN_monotone` to `sandwichedRenyiDiv_monotone`.
-This identity applies separately to the input and output pairs when all
+Source: arXiv:2607.05492v1, main.tex:1664–1683 (the bridge between the extended-real and the
+real-valued divergences). This identity applies separately to the input and output pairs when all
 four operators are positive definite. The only parameter needed here is `0 < α`.
 -/
 theorem sandwichedRenyiDivNN_eq_real_of_pd
@@ -55,19 +59,19 @@ theorem sandwichedRenyiDivNN_eq_real_of_pd
 /-- The real-valued PD analytic core recovered from the Theorem 1 wrapper.
 Source: arXiv:2607.05492v1, main.tex:1656–1683. Unlike the NN wrapper,
 this corollary explicitly assumes PD inputs and outputs. -/
-theorem sandwichedRenyiDiv_monotone_of_isDensity
+theorem sandwichedRenyiDiv_theorem1_of_pd
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ] [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : CPTP ℋ 𝒦) {α : ℝ}
+    (E : CPTP ℋ 𝒦) {α : ℝ}
     (hα_ge : (1 : ℝ) / 2 ≤ α) (hα_ne1 : α ≠ 1)
     {ρ σ : L ℋ} (hρ : IsDensity ρ) (hσ : IsDensity σ)
     (hρpd : ρ ∈ pdSetLM (ℋ := ℋ)) (hσpd : σ ∈ pdSetLM (ℋ := ℋ))
-    (hΦρpd : Φ.toFun ρ ∈ pdSetLM (ℋ := 𝒦))
-    (hΦσpd : Φ.toFun σ ∈ pdSetLM (ℋ := 𝒦)) :
-    sandwichedRenyiDiv α (Φ.toFun ρ) (Φ.toFun σ) ≤ sandwichedRenyiDiv α ρ σ := by
+    (hEρpd : E.toFun ρ ∈ pdSetLM (ℋ := 𝒦))
+    (hEσpd : E.toFun σ ∈ pdSetLM (ℋ := 𝒦)) :
+    sandwichedRenyiDiv α (E.toFun ρ) (E.toFun σ) ≤ sandwichedRenyiDiv α ρ σ := by
   have hα : 0 < α := by linarith
-  have h := sandwichedRenyiDivNN_monotone_of_isDensity Φ hα_ge hα_ne1 hρ hσ
+  have h := sandwichedRenyiDivNN_theorem1 E hα_ge hα_ne1 hρ hσ
     ((pdSetLM_isPositiveDefinite_certificate σ).1 hσpd)
-  rw [sandwichedRenyiDivNN_eq_real_of_pd hα hΦρpd hΦσpd,
+  rw [sandwichedRenyiDivNN_eq_real_of_pd hα hEρpd hEσpd,
     sandwichedRenyiDivNN_eq_real_of_pd hα hρpd hσpd] at h
   exact_mod_cast h
 

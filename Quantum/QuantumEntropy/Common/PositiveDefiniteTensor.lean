@@ -1,5 +1,6 @@
 import Quantum.QuantumEntropy.Common.PositiveDefiniteCertificates
-import Quantum.QuantumEntropy.TensorCFCCore
+import Quantum.QuantumEntropy.TensorCFC
+import Quantum.QuantumMechanics.Channel.Basic
 
 open QuantumState
 open scoped ComplexOrder NNReal Topology

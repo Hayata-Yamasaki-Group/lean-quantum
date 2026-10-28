@@ -1,2 +1,5 @@
 import Quantum.QuantumEntropy.Common.FaithfulApproximation
-import Quantum.QuantumEntropy.SandwichedRenyi.NonNeg.Defs
+import Quantum.QuantumEntropy.SandwichedRenyiBase.NonNeg.Defs
+import Quantum.QuantumMechanics.Channel.Equivalence
+import Quantum.TraceInequality.LownerHeinz.Reciprocal
+import Quantum.TraceInequality.LownerHeinzTheorem

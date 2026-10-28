@@ -7,15 +7,8 @@ Authors: Hayata Yamasaki
 import Quantum.TraceInequality.GeneralizedPerspectiveFunction
 
 import Mathlib.Analysis.InnerProductSpace.Trace
-import Quantum.QuantumMechanics.OperatorNotation
-
-/-!
-# Hilbert-Schmidt operator spaces
-
-This module equips operators on a finite-dimensional complex Hilbert space with the
-Hilbert-Schmidt inner product. It develops adjoints, positivity and left and right
-multiplication on this operator space for the proofs of the Lieb-Ando inequalities.
--/
+import Quantum.TraceInequality.LownerHeinz.Defs
+import Quantum.TraceInequality.LownerHeinzTheorem
 
 namespace HilbertSchmidtOperatorSpace
 
@@ -49,9 +42,9 @@ abbrev HSCoordFun (ℋ : Type u) [NormedAddCommGroup ℋ] [InnerProductSpace ℂ
     [FiniteDimensional ℂ ℋ] :=
   HSIndex ℋ × HSIndex ℋ → ℂ
 
-/-- The operator space `B ℋ`, viewed later with the Hilbert-Schmidt structure. -/
+/-- The operator space `L ℋ`, viewed later with the Hilbert-Schmidt structure. -/
 def HSOp (ℋ : Type u) [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ] : Type u :=
-  QuantumState.B ℋ
+  (ℋ →L[ℂ] ℋ)
 
 instance : AddCommGroup (HSOp ℋ) := by
   delta HSOp
@@ -96,7 +89,7 @@ private noncomputable def hsLinearMapEquiv :
     HSOp ℋ ≃ₗ[ℂ] (ℋ →ₗ[ℂ] ℋ) :=
   LinearMap.toContinuousLinearMap.symm
 
-/-- Hilbert-Schmidt coordinates on `B ℋ`. -/
+/-- Hilbert-Schmidt coordinates on `L ℋ`. -/
 noncomputable def toHSCoordsLinearEquiv :
     HSOp ℋ ≃ₗ[ℂ] HSCoords ℋ :=
   (hsLinearMapEquiv (ℋ := ℋ)).trans <|
@@ -120,8 +113,7 @@ omit [CompleteSpace ℋ] in
       (hsOrthonormalBasis (ℋ := ℋ)).toBasis
       ((hsLinearMapEquiv (ℋ := ℋ)) T) p.1 p.2
   have h : hsCoordsLinearEquiv (toHSCoordsLinearEquiv (ℋ := ℋ) T) = f := by
-    dsimp only [toHSCoordsLinearEquiv]
-    simp [matrixToCoords, matrixToFun, f]
+    simp [toHSCoordsLinearEquiv, matrixToCoords, matrixToFun, f]
   have hEval := congrArg (fun g : HSCoordFun ℋ => g (i, j)) h
   simpa [f] using hEval
 
@@ -185,60 +177,85 @@ instance : ContinuousSMul ℂ (HSOp ℋ) :=
   (toHSCoordsLinearIsometryEquiv (ℋ := ℋ)).isometry.isUniformInducing.isInducing.continuousSMul
     continuous_id fun {c x} => map_smul (toHSCoordsLinearEquiv (ℋ := ℋ)) c x
 
+/-- Linear maps between Hilbert-Schmidt operator spaces over possibly different Hilbert spaces. -/
+abbrev HSMap (H K : Type u)
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    [FiniteDimensional ℂ H]
+    [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+    [FiniteDimensional ℂ K] :=
+  HSOp H →ₗ[ℂ] HSOp K
+
+/-- Identify a compressed rectangular Hilbert-Schmidt map from all of its matrix elements. -/
+theorem adjoint_comp_eq_of_inner
+    {H K : Type u}
+    [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
+    [FiniteDimensional ℂ H]
+    [NormedAddCommGroup K] [InnerProductSpace ℂ K] [CompleteSpace K]
+    [FiniteDimensional ℂ K]
+    (V : HSMap H K) (M : HSMap K K) (N : HSMap H H)
+    (h : ∀ X Y, inner ℂ (V X) (M (V Y)) = inner ℂ X (N Y)) :
+    (LinearMap.adjoint V).comp (M.comp V) = N := by
+  ext Y
+  refine ext_inner_left ℂ fun X => ?_
+  simpa only [LinearMap.comp_apply, LinearMap.adjoint_inner_right] using h X Y
+
 /-- Reinterpret an operator as an element of the Hilbert-Schmidt operator space. -/
-abbrev ofOp (T : QuantumState.B ℋ) : HSOp ℋ := T
+abbrev ofOp (T : (ℋ →L[ℂ] ℋ)) : HSOp ℋ := T
 
 /-- Forget the Hilbert-Schmidt structure and recover the underlying operator. -/
-abbrev toOp (T : HSOp ℋ) : QuantumState.B ℋ := T
+abbrev toOp (T : HSOp ℋ) : (ℋ →L[ℂ] ℋ) := T
 
 /-- Left multiplication on the Hilbert-Schmidt operator space. -/
-noncomputable def leftMulHS (A : QuantumState.B ℋ) : QuantumState.B (HSOp ℋ) :=
+noncomputable def leftMulHS (A : (ℋ →L[ℂ] ℋ)) : HSOp ℋ →L[ℂ] HSOp ℋ :=
   LinearMap.toContinuousLinearMap
     { toFun := fun T => ofOp (A * toOp T)
       map_add' := fun T S => mul_add A (toOp T) (toOp S)
       map_smul' := fun z T => mul_smul_comm z A (toOp T) }
 
 /-- Right multiplication on the Hilbert-Schmidt operator space. -/
-noncomputable def rightMulHS (B : QuantumState.B ℋ) : QuantumState.B (HSOp ℋ) :=
+noncomputable def rightMulHS (B : (ℋ →L[ℂ] ℋ)) : HSOp ℋ →L[ℂ] HSOp ℋ :=
   LinearMap.toContinuousLinearMap
     { toFun := fun T => ofOp (toOp T * B)
       map_add' := fun T S => add_mul (toOp T) (toOp S) B
       map_smul' := fun z T => smul_mul_assoc z (toOp T) B }
 
 omit [CompleteSpace ℋ] in
-@[simp] lemma leftMulHS_mul (A B : QuantumState.B ℋ) :
-    leftMulHS (ℋ := ℋ) (A * B) = leftMulHS (ℋ := ℋ) A * leftMulHS (ℋ := ℋ) B := by
-  ext T
-  change ofOp ((A * B) * toOp T) = ofOp (A * (B * toOp T))
-  rw [mul_assoc]
+@[simp] lemma leftMulHS_apply (A : (ℋ →L[ℂ] ℋ)) (T : HSOp ℋ) :
+    toOp (leftMulHS (ℋ := ℋ) A T) = A * toOp T := rfl
 
 omit [CompleteSpace ℋ] in
-@[simp] lemma rightMulHS_mul (A B : QuantumState.B ℋ) :
+@[simp] lemma rightMulHS_apply (B : (ℋ →L[ℂ] ℋ)) (T : HSOp ℋ) :
+    toOp (rightMulHS (ℋ := ℋ) B T) = toOp T * B := rfl
+
+omit [CompleteSpace ℋ] in
+@[simp] lemma leftMulHS_mul (A B : (ℋ →L[ℂ] ℋ)) :
+    leftMulHS (ℋ := ℋ) (A * B) = leftMulHS (ℋ := ℋ) A * leftMulHS (ℋ := ℋ) B := by
+  ext T
+  simp [mul_assoc]
+
+omit [CompleteSpace ℋ] in
+@[simp] lemma rightMulHS_mul (A B : (ℋ →L[ℂ] ℋ)) :
     rightMulHS (ℋ := ℋ) (A * B) = rightMulHS (ℋ := ℋ) B * rightMulHS (ℋ := ℋ) A := by
   ext T
-  change ofOp (toOp T * (A * B)) = ofOp ((toOp T * A) * B)
-  rw [mul_assoc]
+  simp [mul_assoc]
 
 omit [CompleteSpace ℋ] in
 @[simp] lemma leftMulHS_one :
-    leftMulHS (ℋ := ℋ) (1 : QuantumState.B ℋ) = (1 : QuantumState.B (HSOp ℋ)) := by
+    leftMulHS (ℋ := ℋ) (1 : (ℋ →L[ℂ] ℋ)) = (1 : (HSOp ℋ →L[ℂ] HSOp ℋ)) := by
   ext T
-  change 1 * toOp T = toOp T
-  exact one_mul _
+  simp
 
 omit [CompleteSpace ℋ] in
 @[simp] lemma rightMulHS_one :
-    rightMulHS (ℋ := ℋ) (1 : QuantumState.B ℋ) = (1 : QuantumState.B (HSOp ℋ)) := by
+    rightMulHS (ℋ := ℋ) (1 : (ℋ →L[ℂ] ℋ)) = (1 : (HSOp ℋ →L[ℂ] HSOp ℋ)) := by
   ext T
-  change toOp T * 1 = toOp T
-  exact mul_one _
+  simp
 
 omit [CompleteSpace ℋ] in
-lemma leftMulHS_rightMulHS_commute (A B : QuantumState.B ℋ) :
-    Commute (leftMulHS A) (rightMulHS B) := by
+lemma leftMulHS_rightMulHS_commute (A B : (ℋ →L[ℂ] ℋ)) :
+    Commute (leftMulHS (ℋ := ℋ) A) (rightMulHS (ℋ := ℋ) B) := by
   ext T
-  change ofOp (A * (toOp T * B)) = ofOp ((A * toOp T) * B)
-  rw [mul_assoc]
+  simp [mul_assoc]
 
 omit [CompleteSpace ℋ] in
 private lemma hsInner_eq_pairSum (X Y : (ℋ →L[ℂ] ℋ)) :
@@ -316,9 +333,9 @@ private lemma trace_star_mul_eq_pairSum (X Y : (ℋ →L[ℂ] ℋ)) :
                 LinearMap.toMatrix b.toBasis b.toBasis (Y : ℋ →ₗ[ℂ] ℋ) j i *
                   star (LinearMap.toMatrix b.toBasis b.toBasis (X : ℋ →ₗ[ℂ] ℋ) j i)))
 
-lemma hsInner_eq_trace (X Y : QuantumState.B ℋ) :
+lemma hsInner_eq_trace (X Y : (ℋ →L[ℂ] ℋ)) :
     inner ℂ (ofOp X) (ofOp Y) =
-      LinearMap.trace ℂ ℋ ((star X * Y : QuantumState.B ℋ) : QuantumState.L ℋ) := by
+      LinearMap.trace ℂ ℋ ((star X * Y : ℋ →L[ℂ] ℋ) : ℋ →ₗ[ℂ] ℋ) := by
   calc
     inner ℂ (ofOp X) (ofOp Y)
         = ∑ p : HSIndex ℋ × HSIndex ℋ,
@@ -332,13 +349,13 @@ lemma hsInner_eq_trace (X Y : QuantumState.B ℋ) :
           symm
           exact trace_star_mul_eq_pairSum (X := X) (Y := Y)
 
-lemma re_hsInner_eq_traceRe (X Y : QuantumState.B ℋ) :
+lemma re_hsInner_eq_traceRe (X Y : (ℋ →L[ℂ] ℋ)) :
     Complex.re (inner ℂ (ofOp X) (ofOp Y)) =
       Complex.re
-        (LinearMap.trace ℂ ℋ ((star X * Y : QuantumState.B ℋ) : ℋ →ₗ[ℂ] ℋ)) := by
+        (LinearMap.trace ℂ ℋ ((star X * Y : ℋ →L[ℂ] ℋ) : ℋ →ₗ[ℂ] ℋ)) := by
   simpa using congrArg Complex.re (hsInner_eq_trace (X := X) (Y := Y))
 
-@[simp] lemma leftMulHS_star (A : QuantumState.B ℋ) :
+@[simp] lemma leftMulHS_star (A : (ℋ →L[ℂ] ℋ)) :
     star (leftMulHS (ℋ := ℋ) A) = leftMulHS (ℋ := ℋ) (star A) := by
   rw [eq_comm, ContinuousLinearMap.star_eq_adjoint]
   refine (ContinuousLinearMap.eq_adjoint_iff
@@ -351,26 +368,26 @@ lemma re_hsInner_eq_traceRe (X Y : QuantumState.B ℋ) :
   simp [mul_assoc]
 
 @[simp] lemma leftMulHS_real_smul_one (r : ℝ) :
-    leftMulHS (ℋ := ℋ) (r • (1 : QuantumState.B ℋ)) = r • (1 : QuantumState.B (HSOp ℋ)) := by
+    leftMulHS (ℋ := ℋ) (r • (1 : (ℋ →L[ℂ] ℋ))) = r • (1 : (HSOp ℋ →L[ℂ] HSOp ℋ)) := by
   ext T
   change ofOp ((r • (1 : (ℋ →L[ℂ] ℋ))) * toOp T) = ofOp (r • toOp T)
   simp [Algebra.smul_def]
 
 @[simp] lemma rightMulHS_real_smul_one (r : ℝ) :
-    rightMulHS (ℋ := ℋ) (r • (1 : QuantumState.B ℋ)) = r • (1 : QuantumState.B (HSOp ℋ)) := by
+    rightMulHS (ℋ := ℋ) (r • (1 : (ℋ →L[ℂ] ℋ))) = r • (1 : (HSOp ℋ →L[ℂ] HSOp ℋ)) := by
   ext T
   change ofOp (toOp T * (r • (1 : (ℋ →L[ℂ] ℋ)))) = ofOp (r • toOp T)
   simp [Algebra.smul_def, Algebra.commutes (R := ℝ) (A := (ℋ →L[ℂ] ℋ)) r (toOp T)]
 
-lemma leftMulHS_nonneg {A : QuantumState.B ℋ} (hA0 : 0 ≤ A) :
-    0 ≤ leftMulHS A := by
+lemma leftMulHS_nonneg {A : (ℋ →L[ℂ] ℋ)} (hA0 : 0 ≤ A) :
+    0 ≤ leftMulHS (ℋ := ℋ) A := by
   rw [← CFC.sqrt_mul_sqrt_self A hA0, leftMulHS_mul]
   simpa [leftMulHS_star, (CFC.sqrt_nonneg A).isSelfAdjoint.star_eq] using
     star_mul_self_nonneg (leftMulHS (ℋ := ℋ) (CFC.sqrt A))
 
 @[gcongr]
-lemma leftMulHS_le_leftMulHS {A B : QuantumState.B ℋ} (hAB : A ≤ B) :
-    leftMulHS A ≤ leftMulHS B := by
+lemma leftMulHS_le_leftMulHS {A B : (ℋ →L[ℂ] ℋ)} (hAB : A ≤ B) :
+    leftMulHS (ℋ := ℋ) A ≤ leftMulHS (ℋ := ℋ) B := by
   have hnonneg : 0 ≤ leftMulHS (ℋ := ℋ) (B - A) :=
     leftMulHS_nonneg (ℋ := ℋ) (sub_nonneg.mpr hAB)
   have hsub :
@@ -379,9 +396,9 @@ lemma leftMulHS_le_leftMulHS {A B : QuantumState.B ℋ} (hAB : A ≤ B) :
     ext T; exact congrArg ofOp (sub_mul B A (toOp T)).symm
   exact sub_nonneg.mp (by simpa [hsub] using hnonneg)
 
-lemma leftMulHS_pdSet [ContinuousFunctionalCalculus ℝ (QuantumState.B ℋ) IsSelfAdjoint]
-    [Nontrivial (QuantumState.B ℋ)]
-    {A : QuantumState.B ℋ} (hA : A ∈ GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ)) :
+lemma leftMulHS_pdSet [ContinuousFunctionalCalculus ℝ (ℋ →L[ℂ] ℋ) IsSelfAdjoint]
+    [Nontrivial (ℋ →L[ℂ] ℋ)]
+    {A : (ℋ →L[ℂ] ℋ)} (hA : A ∈ GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ)) :
     leftMulHS (ℋ := ℋ) A ∈ GeneralizedPerspectiveFunction.pdSet (ℋ := HSOp ℋ) := by
   rcases hA with ⟨hA_sa, hA_spec⟩
   have hleft_sa : IsSelfAdjoint (leftMulHS (ℋ := ℋ) A) := by
@@ -402,7 +419,7 @@ lemma leftMulHS_pdSet [ContinuousFunctionalCalculus ℝ (QuantumState.B ℋ) IsS
     simpa [Algebra.algebraMap_eq_smul_one, leftMulHS_real_smul_one (r := r)] using
       leftMulHS_le_leftMulHS (ℋ := ℋ) hrA
 
-@[simp] lemma rightMulHS_star (A : QuantumState.B ℋ) :
+@[simp] lemma rightMulHS_star (A : (ℋ →L[ℂ] ℋ)) :
     star (rightMulHS (ℋ := ℋ) A) = rightMulHS (ℋ := ℋ) (star A) := by
   rw [eq_comm, ContinuousLinearMap.star_eq_adjoint]
   refine (ContinuousLinearMap.eq_adjoint_iff
@@ -420,7 +437,7 @@ lemma leftMulHS_pdSet [ContinuousFunctionalCalculus ℝ (QuantumState.B ℋ) IsS
       (g := ((toOp Y : ℋ →L[ℂ] ℋ) : ℋ →ₗ[ℂ] ℋ)) (h := (A : ℋ →ₗ[ℂ] ℋ)))
 
 /-- Left multiplication as a real `⋆`-algebra homomorphism on the Hilbert-Schmidt operator space. -/
-noncomputable def leftMulHSStarAlgHom : QuantumState.B ℋ →⋆ₐ[ℝ] QuantumState.B (HSOp ℋ) where
+noncomputable def leftMulHSStarAlgHom : (ℋ →L[ℂ] ℋ) →⋆ₐ[ℝ] (HSOp ℋ →L[ℂ] HSOp ℋ) where
   toFun := leftMulHS (ℋ := ℋ)
   map_one' := leftMulHS_one (ℋ := ℋ)
   map_mul' := leftMulHS_mul (ℋ := ℋ)
@@ -435,15 +452,10 @@ noncomputable def leftMulHSStarAlgHom : QuantumState.B ℋ →⋆ₐ[ℝ] Quantu
     simp [leftMulHS_star (ℋ := ℋ) A]
 
 /-- Right multiplication as a real `⋆`-algebra homomorphism out of the opposite algebra. -/
-noncomputable def rightMulHSStarAlgHom : (QuantumState.B ℋ)ᵐᵒᵖ →⋆ₐ[ℝ] QuantumState.B (HSOp ℋ) where
+noncomputable def rightMulHSStarAlgHom : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ →⋆ₐ[ℝ] (HSOp ℋ →L[ℂ] HSOp ℋ) where
   toFun := fun A => rightMulHS (ℋ := ℋ) (MulOpposite.unop A)
   map_one' := by simp [rightMulHS_one (ℋ := ℋ)]
-  map_mul' := by
-    intro A B
-    ext T
-    change ofOp (toOp T * MulOpposite.unop (A * B)) =
-      ofOp ((toOp T * MulOpposite.unop B) * MulOpposite.unop A)
-    simp [mul_assoc]
+  map_mul' := by intro A B; ext T; simp [rightMulHS_apply, mul_assoc]
   map_zero' := by
     ext T
     change ofOp (toOp T * MulOpposite.unop (0 : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ)) = ofOp (0
@@ -463,8 +475,12 @@ noncomputable def rightMulHSStarAlgHom : (QuantumState.B ℋ)ᵐᵒᵖ →⋆ₐ
     intro A
     simp [rightMulHS_star (ℋ := ℋ) (MulOpposite.unop A)]
 
+@[simp] theorem rightMulHSStarAlgHom_apply (A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) :
+    rightMulHSStarAlgHom (ℋ := ℋ) A = rightMulHS (ℋ := ℋ) (MulOpposite.unop A) :=
+  rfl
+
 /-- The `⋆`-algebra hom sending `A` to `op (star A)`. On selfadjoint operators this is just `op`. -/
-noncomputable def opStarHSStarAlgHom : QuantumState.B ℋ →⋆ₐ[ℝ] (QuantumState.B ℋ)ᵐᵒᵖ where
+noncomputable def opStarHSStarAlgHom : (ℋ →L[ℂ] ℋ) →⋆ₐ[ℝ] (ℋ →L[ℂ] ℋ)ᵐᵒᵖ where
   toFun := fun A => MulOpposite.op (star A)
   map_one' := by simp
   map_mul' := by
@@ -494,8 +510,8 @@ private noncomputable def opStarHSAlgEquiv : (ℋ →L[ℂ] ℋ) ≃ₐ[ℝ] (�
     simp [Algebra.algebraMap_eq_smul_one]
 
 omit [FiniteDimensional ℂ ℋ] in
-lemma isSelfAdjoint_op (A : QuantumState.B ℋ) (hA : IsSelfAdjoint A) :
-    IsSelfAdjoint (MulOpposite.op A : (QuantumState.B ℋ)ᵐᵒᵖ) := by
+lemma op_isSelfAdjoint (A : (ℋ →L[ℂ] ℋ)) (hA : IsSelfAdjoint A) :
+    IsSelfAdjoint (MulOpposite.op A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) := by
   exact congrArg MulOpposite.op hA.star_eq
 
 private noncomputable def opStarHSLinearMap : (ℋ →L[ℂ] ℋ) →ₗ[ℝ] (ℋ →L[ℂ] ℋ)ᵐᵒᵖ where
@@ -536,27 +552,27 @@ private noncomputable def rightMulHSLinearMap : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ →
     rw [MulOpposite.unop_smul, mul_smul_comm]
 
 omit [FiniteDimensional ℂ ℋ] in
-lemma spectrum_op_eq [ContinuousFunctionalCalculus ℝ (QuantumState.B ℋ) IsSelfAdjoint]
-    [Nontrivial (QuantumState.B ℋ)]
-    (A : QuantumState.B ℋ) (hA : IsSelfAdjoint A) :
-    spectrum ℝ (MulOpposite.op A : (QuantumState.B ℋ)ᵐᵒᵖ) = spectrum ℝ A := by
-  have hopA : IsSelfAdjoint (MulOpposite.op A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) := isSelfAdjoint_op
+lemma spectrum_op_eq [ContinuousFunctionalCalculus ℝ (ℋ →L[ℂ] ℋ) IsSelfAdjoint]
+    [Nontrivial (ℋ →L[ℂ] ℋ)]
+    (A : (ℋ →L[ℂ] ℋ)) (hA : IsSelfAdjoint A) :
+    spectrum ℝ (MulOpposite.op A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) = spectrum ℝ A := by
+  have hopA : IsSelfAdjoint (MulOpposite.op A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) := op_isSelfAdjoint
       (A := A) hA
   simpa [opStarHSAlgEquiv, hA.star_eq, hopA.star_eq] using
     (AlgEquiv.spectrum_eq (opStarHSAlgEquiv (ℋ := ℋ)) A)
 
-lemma cfc_op_eq_op_cfc [ContinuousFunctionalCalculus ℝ (QuantumState.B ℋ) IsSelfAdjoint]
-    [ContinuousFunctionalCalculus ℝ ((QuantumState.B ℋ)ᵐᵒᵖ) IsSelfAdjoint] [Nontrivial
-        (QuantumState.B ℋ)]
-    (f : ℝ → ℝ) (A : QuantumState.B ℋ) (hA : IsSelfAdjoint A)
+lemma cfc_op_eq_op_cfc [ContinuousFunctionalCalculus ℝ (ℋ →L[ℂ] ℋ) IsSelfAdjoint]
+    [ContinuousFunctionalCalculus ℝ ((ℋ →L[ℂ] ℋ)ᵐᵒᵖ) IsSelfAdjoint] [Nontrivial
+        (ℋ →L[ℂ] ℋ)]
+    (f : ℝ → ℝ) (A : (ℋ →L[ℂ] ℋ)) (hA : IsSelfAdjoint A)
     (hf : ContinuousOn f (spectrum ℝ A)) :
-    cfc (R := ℝ) (A := (QuantumState.B ℋ)ᵐᵒᵖ) (p := IsSelfAdjoint) f (MulOpposite.op A) =
+    cfc (R := ℝ) (A := (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) (p := IsSelfAdjoint) f (MulOpposite.op A) =
       MulOpposite.op (cfcR f A) := by
   let φ : (ℋ →L[ℂ] ℋ) →⋆ₐ[ℝ] (ℋ →L[ℂ] ℋ)ᵐᵒᵖ := opStarHSStarAlgHom (ℋ := ℋ)
   have hφ : Continuous φ := by
     simpa [opStarHSLinearMap] using
       (LinearMap.continuous_of_finiteDimensional (opStarHSLinearMap (ℋ := ℋ)))
-  have hopA : IsSelfAdjoint (MulOpposite.op A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) := isSelfAdjoint_op
+  have hopA : IsSelfAdjoint (MulOpposite.op A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) := op_isSelfAdjoint
       (A := A) hA
   have hφA : IsSelfAdjoint (φ A) := hA.map φ
   have hcfcA :
@@ -566,58 +582,49 @@ lemma cfc_op_eq_op_cfc [ContinuousFunctionalCalculus ℝ (QuantumState.B ℋ) Is
       IsSelfAdjoint
         (MulOpposite.op (cfc (R := ℝ) (A := (ℋ →L[ℂ] ℋ)) (p := IsSelfAdjoint) f A)
             : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) :=
-    isSelfAdjoint_op (A := cfc (R := ℝ) (A := (ℋ →L[ℂ] ℋ)) (p := IsSelfAdjoint) f A) hcfcA
+    op_isSelfAdjoint (A := cfc (R := ℝ) (A := (ℋ →L[ℂ] ℋ)) (p := IsSelfAdjoint) f A) hcfcA
   have hmap := StarAlgHom.map_cfc (φ := φ) (f := f) (a := A)
     (hf := hf) (hφ := hφ) (ha := hA) (hφa := hφA)
   simpa [φ, opStarHSStarAlgHom, cfcR, hA.star_eq, hopA.star_eq, hcfcA.star_eq,
     hopcfcA.star_eq] using hmap.symm
 
-lemma leftMulHS_cfcR
-    (f : ℝ → ℝ) (A : QuantumState.B ℋ) (hA : IsSelfAdjoint A)
+lemma leftMulHS_cfcR [ContinuousFunctionalCalculus ℝ (ℋ →L[ℂ] ℋ) IsSelfAdjoint]
+    [Nontrivial (ℋ →L[ℂ] ℋ)]
+    (f : ℝ → ℝ) (A : (ℋ →L[ℂ] ℋ)) (hA : IsSelfAdjoint A)
     (hf : ContinuousOn f (spectrum ℝ A)) :
-    leftMulHS (cfcR f A) =
-      cfcR f (leftMulHS A) := by
-  rcases subsingleton_or_nontrivial (QuantumState.B ℋ) with h | h
-  · haveI : Subsingleton (HSOp ℋ) := h
-    ext x
-    exact Subsingleton.elim _ _
-  · let φ : (ℋ →L[ℂ] ℋ) →⋆ₐ[ℝ] (HSOp ℋ →L[ℂ] HSOp ℋ) := leftMulHSStarAlgHom (ℋ := ℋ)
-    have hφ : Continuous φ := by
-      simpa [leftMulHSLinearMap] using
-        (LinearMap.continuous_of_finiteDimensional (leftMulHSLinearMap (ℋ := ℋ)))
-    have hφA : IsSelfAdjoint (φ A) := hA.map φ
-    have hmap := StarAlgHom.map_cfc (φ := φ) (f := f) (a := A)
-      (hf := hf) (hφ := hφ) (ha := hA) (hφa := hφA)
-    simpa [φ, cfcR] using hmap
+    leftMulHS (ℋ := ℋ) (cfcR f A) =
+      cfcR (ℋ := HSOp ℋ) f (leftMulHS (ℋ := ℋ) A) := by
+  let φ : (ℋ →L[ℂ] ℋ) →⋆ₐ[ℝ] (HSOp ℋ →L[ℂ] HSOp ℋ) := leftMulHSStarAlgHom (ℋ := ℋ)
+  have hφ : Continuous φ := by
+    simpa [leftMulHSLinearMap] using
+      (LinearMap.continuous_of_finiteDimensional (leftMulHSLinearMap (ℋ := ℋ)))
+  have hφA : IsSelfAdjoint (φ A) := hA.map φ
+  have hmap := StarAlgHom.map_cfc (φ := φ) (f := f) (a := A)
+    (hf := hf) (hφ := hφ) (ha := hA) (hφa := hφA)
+  simpa [φ, cfcR] using hmap
 
-lemma rightMulHS_cfcR
-    (f : ℝ → ℝ) (A : QuantumState.B ℋ) (hA : IsSelfAdjoint A)
+lemma rightMulHS_cfcR [ContinuousFunctionalCalculus ℝ (ℋ →L[ℂ] ℋ) IsSelfAdjoint]
+    [ContinuousFunctionalCalculus ℝ ((ℋ →L[ℂ] ℋ)ᵐᵒᵖ) IsSelfAdjoint] [Nontrivial
+        (ℋ →L[ℂ] ℋ)]
+    (f : ℝ → ℝ) (A : (ℋ →L[ℂ] ℋ)) (hA : IsSelfAdjoint A)
     (hf : ContinuousOn f (spectrum ℝ A)) :
-    rightMulHS (cfcR f A) =
-      cfcR f (rightMulHS A) := by
-  rcases subsingleton_or_nontrivial (QuantumState.B ℋ) with h | h
-  · haveI : Subsingleton (HSOp ℋ) := h
-    ext x
-    exact Subsingleton.elim _ _
-  · letI : ContinuousFunctionalCalculus ℝ ((QuantumState.B ℋ)ᵐᵒᵖ) IsSelfAdjoint :=
-      (IsSelfAdjoint.instIsometricContinuousFunctionalCalculus
-        (A := (QuantumState.B ℋ)ᵐᵒᵖ)).toContinuousFunctionalCalculus
-    let φ : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ →⋆ₐ[ℝ] (HSOp ℋ →L[ℂ] HSOp ℋ) := rightMulHSStarAlgHom (ℋ := ℋ)
-    have hφ : Continuous φ := by
-      simpa [rightMulHSLinearMap] using
-        (LinearMap.continuous_of_finiteDimensional (rightMulHSLinearMap (ℋ := ℋ)))
-    have hopA : IsSelfAdjoint (MulOpposite.op A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) := isSelfAdjoint_op
-        (A := A) hA
-    have hφA : IsSelfAdjoint (φ (MulOpposite.op A)) := hopA.map φ
-    have hmap := StarAlgHom.map_cfc (φ := φ) (f := f) (a := MulOpposite.op A)
-      (hf := by simpa [spectrum_op_eq (A := A) hA] using hf)
-      (hφ := hφ) (ha := hopA) (hφa := hφA)
-    have hopcfc :
-        cfc (R := ℝ) (A := (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) (p := IsSelfAdjoint) f (MulOpposite.op A) =
-          MulOpposite.op (cfcR f A) :=
-      cfc_op_eq_op_cfc (ℋ := ℋ) f A hA hf
-    dsimp only [φ, rightMulHSStarAlgHom] at hmap
-    simpa [cfcR, hopcfc] using hmap
+    rightMulHS (ℋ := ℋ) (cfcR f A) =
+      cfcR (ℋ := HSOp ℋ) f (rightMulHS (ℋ := ℋ) A) := by
+  let φ : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ →⋆ₐ[ℝ] (HSOp ℋ →L[ℂ] HSOp ℋ) := rightMulHSStarAlgHom (ℋ := ℋ)
+  have hφ : Continuous φ := by
+    simpa [rightMulHSLinearMap] using
+      (LinearMap.continuous_of_finiteDimensional (rightMulHSLinearMap (ℋ := ℋ)))
+  have hopA : IsSelfAdjoint (MulOpposite.op A : (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) := op_isSelfAdjoint
+      (A := A) hA
+  have hφA : IsSelfAdjoint (φ (MulOpposite.op A)) := hopA.map φ
+  have hmap := StarAlgHom.map_cfc (φ := φ) (f := f) (a := MulOpposite.op A)
+    (hf := by simpa [spectrum_op_eq (A := A) hA] using hf)
+    (hφ := hφ) (ha := hopA) (hφa := hφA)
+  have hopcfc :
+      cfc (R := ℝ) (A := (ℋ →L[ℂ] ℋ)ᵐᵒᵖ) (p := IsSelfAdjoint) f (MulOpposite.op A) =
+        MulOpposite.op (cfcR f A) :=
+    cfc_op_eq_op_cfc (ℋ := ℋ) f A hA hf
+  simpa [φ, cfcR, rightMulHSStarAlgHom, hopcfc] using hmap
 
 end
 

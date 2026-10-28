@@ -5,11 +5,9 @@ Authors: Hayata Yamasaki
 -/
 
 import Quantum.QuantumEntropy.UmegakiDPI.SelectedProvider
+import Quantum.QuantumEntropy.UmegakiDPI.Interface
+import Quantum.QuantumMechanics.QuantumState
 
-/-- **Provider-neutral data processing for the Umegaki relative entropy,
-    positive-definite case.** -/
+/-- **Umegaki data processing for positive-definite inputs.** -/
 theorem UmegakiDPI.monotoneOnPosDef : UmegakiDPI.MonotoneOnPosDef :=
   UmegakiDPI.selectedProvider.monotoneOnPosDef
-
-@[deprecated (since := "2026-09-02")]
-alias UmegakiDPI.monotone_pd_selected := UmegakiDPI.monotoneOnPosDef

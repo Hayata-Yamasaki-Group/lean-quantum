@@ -1,9 +1,14 @@
 import Quantum.QuantumMechanics.Channel.Representations
 import Quantum.TraceInequality.LownerHeinz.Defs
-import Quantum.TraceInequality.JensenOperatorInequalityIImpIV
-import Quantum.TraceInequality.LiebAndo.PositiveDefiniteGeometry
-import Quantum.TraceInequality.LiebAndo.TraceMapLM
-import Quantum.QuantumEntropy.SandwichedRenyi.NonNeg.Defs
+import Quantum.TraceInequality.LiebAndo.LownerHeinz.Defs
+import Quantum.TraceInequality.TraceFunctionMonotonicity.LownerHeinz.Defs
+import Quantum.TraceInequality.LownerHeinz.DefsRetained
+import Quantum.TraceInequality.LiebAndo.JensenOperatorInequalityIImpIV
+import Quantum.TraceInequality.JensenOperatorInequalityIImpIVRetained
+import Quantum.TraceInequality.LiebTrace.Bridge
+import Quantum.TraceInequality.LiebAndo.LiebTrace.Bridge
+import Quantum.TraceInequality.LiebAndo.AndoConvexity.LiebTrace.Bridge
+import Quantum.QuantumEntropy.SandwichedRenyiBase.NonNeg.Defs
 import Quantum.QuantumEntropy.VonNeumann.Basic
 import Quantum.QuantumEntropy.VonNeumann.PartialTraceThirdCPTP
 import Quantum.QuantumEntropy.UmegakiDPI.AlphaOneCore
@@ -11,10 +16,10 @@ import Quantum.QuantumEntropy.UmegakiDPI.AlphaOneCore
 /-!
 # Paper 1 comparator challenge
 
-The statements below are the 34 Comparator targets listed in the repository README: 29 results
-related to Sections 1.5 and 2--4 of arXiv:2607.05492 (version 2) and five diagnostics.
-Direct imports are restricted to definition/vocabulary or pre-provider modules; the current
-provider modules are imported only by `Paper1Solution.lean`.
+The statements below freeze the main theorem surface presented in Sections 2--4
+of arXiv:2607.05492v1.  Direct imports are restricted to definition/vocabulary
+or pre-provider modules; the current provider modules are imported only by
+`Paper1Solution.lean`.
 -/
 
 /-! Definition-only vocabulary for the tripartite statements. The reference map
@@ -55,13 +60,10 @@ universe u v w
 
 /-! ## Section 2: complete-positivity representations -/
 
--- The basis argument is kept so that the six CP equivalences share one shape.
-set_option linter.unusedDecidableInType false in
-set_option linter.unusedFintypeInType false in
 /-- Complete positivity iff positivity of the input-space tensor amplification. -/
 theorem cp_iff_tensor
     {ℋ₁ : Type u} {ℋ₂ : Type v} [Qudit ℋ₁] [Qudit ℋ₂]
-    {κ : Type w} [DecidableEq κ] [Fintype κ]
+    {κ : Type w}
     (_b : Module.Basis κ ℂ ℋ₁) (Φ : QuantumChannel.T ℋ₁ ℋ₂) :
     QuantumChannel.IsCompletelyPositive Φ ↔
       QuantumChannel.AmplificationPositive Φ := by
@@ -76,13 +78,10 @@ theorem cp_iff_choi
       QuantumChannel.ChoiPositive b Φ := by
   sorry
 
--- The basis argument is kept so that the six CP equivalences share one shape.
-set_option linter.unusedDecidableInType false in
-set_option linter.unusedFintypeInType false in
 /-- Complete positivity iff existence of a finite Kraus representation. -/
 theorem cp_iff_kraus
     {ℋ₁ : Type u} {ℋ₂ : Type v} [Qudit ℋ₁] [Qudit ℋ₂]
-    {κ : Type w} [DecidableEq κ] [Fintype κ]
+    {κ : Type w}
     (_b : Module.Basis κ ℂ ℋ₁) (Φ : QuantumChannel.T ℋ₁ ℋ₂) :
     QuantumChannel.IsCompletelyPositive Φ ↔ QuantumChannel.HasKraus Φ := by
   sorry
@@ -96,13 +95,10 @@ theorem cp_iff_rank_kraus
       QuantumChannel.HasRankKraus b Φ := by
   sorry
 
--- The basis argument is kept so that the six CP equivalences share one shape.
-set_option linter.unusedDecidableInType false in
-set_option linter.unusedFintypeInType false in
 /-- Complete positivity iff existence of a finite-dimensional Stinespring representation. -/
 theorem cp_iff_stinespring
     {ℋ₁ : Type u} {ℋ₂ : Type v} [Qudit ℋ₁] [Qudit ℋ₂]
-    {κ : Type w} [DecidableEq κ] [Fintype κ]
+    {κ : Type w}
     (_b : Module.Basis κ ℂ ℋ₁) (Φ : QuantumChannel.T ℋ₁ ℋ₂) :
     QuantumChannel.IsCompletelyPositive Φ ↔
       ∃ (ℋ₃ : Type u) (_ : Qudit ℋ₃),
@@ -143,7 +139,7 @@ theorem power_Icc_zero_one_operatorMonotoneOn_Ici
   sorry
 
 /-- Operator concavity for powers in `[0, 1]`. -/
-theorem operatorConcaveOn_rpow_Ici
+theorem power_Icc_zero_one_operatorConcaveOn_Ici
     {𝓐 : Type u} [CStarAlgebra 𝓐] [PartialOrder 𝓐] [StarOrderedRing 𝓐]
     [Nontrivial 𝓐] [NonnegSpectrumClass ℝ 𝓐]
     (p : ℝ) (hp : p ∈ Set.Icc (0 : ℝ) 1) :
@@ -152,7 +148,7 @@ theorem operatorConcaveOn_rpow_Ici
   sorry
 
 /-- Operator convexity for powers in `[1, 2]`. -/
-theorem operatorConvexOn_rpow_Ici
+theorem power_Icc_one_two_operatorConvexOn_Ici
     {𝓐 : Type u} [CStarAlgebra 𝓐] [PartialOrder 𝓐] [StarOrderedRing 𝓐]
     [Nontrivial 𝓐] [NonnegSpectrumClass ℝ 𝓐]
     (p : ℝ) (hp : p ∈ Set.Icc (1 : ℝ) 2) :
@@ -170,7 +166,7 @@ theorem power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi
   sorry
 
 /-- Operator concavity of `x ↦ -(x^p)` for `p ∈ [-1, 0]`. -/
-theorem operatorConcaveOn_neg_rpow_Ioi
+theorem power_Icc_neg_one_zero_neg_operatorConcaveOn_Ioi
     {𝓐 : Type u} [CStarAlgebra 𝓐] [PartialOrder 𝓐] [StarOrderedRing 𝓐]
     [Nontrivial 𝓐] [NonnegSpectrumClass ℝ 𝓐]
     (p : ℝ) (hp : p ∈ Set.Icc (-1 : ℝ) 0) :
@@ -179,16 +175,16 @@ theorem operatorConcaveOn_neg_rpow_Ioi
   sorry
 
 /-- Hansen--Pedersen two-operator Jensen inequality on `[0, ∞)`. -/
-theorem jensenColumn_of_opConvexIciAll
+theorem theorem_2_5_2_i_all_imp_v_Ici
     {ℋ : Type u} [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ]
     [CompleteSpace ℋ] [Nontrivial ℋ] {f : ℝ → ℝ}
     (hf : JensenOperatorInequality.OperatorConvexIciAllContNonposAtZero.{u} f) :
     JensenOperatorInequality.JensenContractiveColumnCondition (ℋ := ℋ) f := by
   sorry
 
-/-- Joint convexity of generalized perspectives on the PSD/PD domain, with localized hypotheses on
-    `f`. -/
-theorem jointlyConvexOn_generalizedPerspective_psdSet_pdSet
+/-- Joint convexity of generalized perspectives on the PSD/PD domain,
+with localized hypotheses on `f`. -/
+theorem theorem_2_5_forward_jointlyConvexOn_psd_pd_Ici
     {ℋ : Type u} [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ]
     [CompleteSpace ℋ] [Nontrivial ℋ] {f h : ℝ → ℝ}
     (hf : JensenOperatorInequality.OperatorConvexIciAllContNonposAtZero.{u} f)
@@ -197,13 +193,13 @@ theorem jointlyConvexOn_generalizedPerspective_psdSet_pdSet
     (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
     GeneralizedPerspectiveFunction.JointlyConvexOn
       (GeneralizedPerspectiveFunction.psdSet (ℋ := ℋ))
-      GeneralizedPerspectiveFunction.pdSet
+      (GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ))
       (fun A B => GeneralizedPerspectiveFunction.generalizedPerspective f h A B) := by
   sorry
 
-/-- Joint concavity of generalized perspectives on the PSD/PD domain, with localized hypotheses on
-    `f`. -/
-theorem jointlyConcaveOn_generalizedPerspective_psdSet_pdSet
+/-- Joint concavity of generalized perspectives on the PSD/PD domain,
+with localized hypotheses on `f`. -/
+theorem theorem_2_6_forward_jointlyConcaveOn_psd_pd_Ici
     {ℋ : Type u} [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ]
     [CompleteSpace ℋ] [Nontrivial ℋ] {f h : ℝ → ℝ}
     (hfconc :
@@ -215,40 +211,43 @@ theorem jointlyConcaveOn_generalizedPerspective_psdSet_pdSet
     (hpos : ∀ x ∈ Set.Ioi (0 : ℝ), 0 < h x) :
     GeneralizedPerspectiveFunction.JointlyConcaveOn
       (GeneralizedPerspectiveFunction.psdSet (ℋ := ℋ))
-      GeneralizedPerspectiveFunction.pdSet
+      (GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ))
       (fun A B => GeneralizedPerspectiveFunction.generalizedPerspective f h A B) := by
   sorry
 
 /-- Lieb joint concavity on the positive-definite cone. -/
-theorem jointlyConcaveOn_liebTraceMap_pdSetLM
-    {ℋ : Type u} [Qudit ℋ] [Nontrivial ℋ]
-    {s : ℝ} (hs0 : 0 < s) (hs1 : s < 1) (K : L ℋ) :
+theorem liebTrace_jointlyConcaveOn_pdSet
+    {ℋ : Type u} [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ]
+    [CompleteSpace ℋ] [FiniteDimensional ℂ ℋ] [Nontrivial ℋ]
+    {s : ℝ} (hs0 : 0 < s) (hs1 : s < 1) (K : ℋ →L[ℂ] ℋ) :
     GeneralizedPerspectiveFunction.JointlyConcaveOn
-      SandwichedRenyiRelativeEntropy.pdSetLM
-      SandwichedRenyiRelativeEntropy.pdSetLM
-      (LiebAndoTrace.liebTraceMap s K) := by
+      (GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ))
+      (GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ))
+      (LiebAndoTrace.liebTraceMap (ℋ := ℋ) s K) := by
   sorry
 
 /-- Lieb joint convexity on the positive-definite cone. -/
-theorem jointlyConvexOn_liebTraceMap_pdSetLM
-    {ℋ : Type u} [Qudit ℋ] [Nontrivial ℋ]
-    {s : ℝ} (hs1 : 1 ≤ s) (hs2 : s ≤ 2) (K : L ℋ) :
+theorem liebTrace_jointlyConvexOn_pdSet
+    {ℋ : Type u} [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ]
+    [CompleteSpace ℋ] [FiniteDimensional ℂ ℋ] [Nontrivial ℋ]
+    {s : ℝ} (hs1 : 1 ≤ s) (hs2 : s ≤ 2) (K : ℋ →L[ℂ] ℋ) :
     GeneralizedPerspectiveFunction.JointlyConvexOn
-      SandwichedRenyiRelativeEntropy.pdSetLM
-      SandwichedRenyiRelativeEntropy.pdSetLM
-      (LiebAndoTrace.liebTraceMap s K) := by
+      (GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ))
+      (GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ))
+      (LiebAndoTrace.liebTraceMap (ℋ := ℋ) s K) := by
   sorry
 
 /-- Ando joint convexity on the positive-definite cone. -/
-theorem jointlyConvexOn_andoTraceMap_pdSetLM
-    {ℋ : Type u} [Qudit ℋ] [Nontrivial ℋ]
+theorem andoTrace_jointlyConvexOn_pdSet
+    {ℋ : Type u} [NormedAddCommGroup ℋ] [InnerProductSpace ℂ ℋ]
+    [CompleteSpace ℋ] [FiniteDimensional ℂ ℋ] [Nontrivial ℋ]
     {q r : ℝ} (hq1 : 1 ≤ q) (hq2 : q ≤ 2)
     (hr0 : 0 ≤ r) (hr1 : r ≤ 1) (hqr : 1 ≤ q - r)
-    (K : L ℋ) :
+    (K : ℋ →L[ℂ] ℋ) :
     GeneralizedPerspectiveFunction.JointlyConvexOn
-      SandwichedRenyiRelativeEntropy.pdSetLM
-      SandwichedRenyiRelativeEntropy.pdSetLM
-      (LiebAndoTrace.andoTraceMap q r K) := by
+      (GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ))
+      (GeneralizedPerspectiveFunction.pdSet (ℋ := ℋ))
+      (LiebAndoTrace.andoTraceMap (ℋ := ℋ) q r K) := by
   sorry
 
 /-! ## Section 4: sandwiched Renyi data processing -/
@@ -257,14 +256,14 @@ theorem jointlyConvexOn_andoTraceMap_pdSetLM
 theorem sandwichedRenyiDiv_monotone
     {ℋ : Type u} [Qudit ℋ] [Nontrivial ℋ]
     {𝒦 : Type u} [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : QuantumChannel.CPTP ℋ 𝒦)
+    (E : QuantumChannel.CPTP ℋ 𝒦)
     {α : ℝ} (hα_ge : (1 : ℝ) / 2 ≤ α) (hα_ne1 : α ≠ 1)
     {ρ σ : L ℋ}
-    (hρ : ρ ∈ SandwichedRenyiRelativeEntropy.pdSetLM)
-    (hσ : σ ∈ SandwichedRenyiRelativeEntropy.pdSetLM)
-    (hΦρ : Φ.toFun ρ ∈ SandwichedRenyiRelativeEntropy.pdSetLM)
-    (hΦσ : Φ.toFun σ ∈ SandwichedRenyiRelativeEntropy.pdSetLM) :
-    SandwichedRenyiRelativeEntropy.sandwichedRenyiDiv α (Φ.toFun ρ) (Φ.toFun σ) ≤
+    (hρ : ρ ∈ SandwichedRenyiRelativeEntropy.pdSetLM (ℋ := ℋ))
+    (hσ : σ ∈ SandwichedRenyiRelativeEntropy.pdSetLM (ℋ := ℋ))
+    (hEρ : E.toFun ρ ∈ SandwichedRenyiRelativeEntropy.pdSetLM (ℋ := 𝒦))
+    (hEσ : E.toFun σ ∈ SandwichedRenyiRelativeEntropy.pdSetLM (ℋ := 𝒦)) :
+    SandwichedRenyiRelativeEntropy.sandwichedRenyiDiv α (E.toFun ρ) (E.toFun σ) ≤
       SandwichedRenyiRelativeEntropy.sandwichedRenyiDiv α ρ σ := by
   sorry
 
@@ -272,10 +271,10 @@ theorem sandwichedRenyiDiv_monotone
 theorem sandwichedRenyiDivNN_monotone
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ]
     [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : QuantumChannel.CPTP ℋ 𝒦) {α : ℝ}
+    (E : QuantumChannel.CPTP ℋ 𝒦) {α : ℝ}
     (hα_ge : (1 : ℝ) / 2 ≤ α) (hα_ne1 : α ≠ 1)
     {ρ σ : L ℋ} (hρ : 0 ≤ ρ) (hσ : 0 ≤ σ) :
-    SandwichedRenyiRelativeEntropy.sandwichedRenyiDivNN α (Φ.toFun ρ) (Φ.toFun σ) ≤
+    SandwichedRenyiRelativeEntropy.sandwichedRenyiDivNN α (E.toFun ρ) (E.toFun σ) ≤
       SandwichedRenyiRelativeEntropy.sandwichedRenyiDivNN α ρ σ := by
   sorry
 
@@ -302,7 +301,7 @@ end
 section
 open QuantumChannel SandwichedRenyiRelativeEntropy
 
-theorem tendsto_sandwichedRenyiDiv_umegakiNorm_right
+theorem sandwichedRenyiDiv_tendsto_umegaki
     {ℋ : Type u} [Qudit ℋ] [Nontrivial ℋ]
     {ρ σ : L ℋ} (hρ : ρ ∈ pdSetLM (ℋ := ℋ)) (hσ : σ ∈ pdSetLM (ℋ := ℋ)) :
     Filter.Tendsto (fun α => sandwichedRenyiDiv α ρ σ) (𝓝[>] (1 : ℝ))
@@ -314,7 +313,7 @@ end
 section
 open QuantumChannel SandwichedRenyiRelativeEntropy
 
-theorem tendsto_sandwichedRenyiDiv_umegakiNorm_of_pd
+theorem sandwichedRenyi_tendsto_umegaki_of_pd
     {H : Type u} [Qudit H] [Nontrivial H] {ρ σ : L H} (hρ : ρ ∈ pdSetLM) (hσ : σ ∈ pdSetLM) :
     Filter.Tendsto (fun α => sandwichedRenyiDiv α ρ σ) (𝓝[≠] (1 : ℝ))
       (𝓝 (umegakiNorm ρ σ)) := by
@@ -364,7 +363,7 @@ end
 section
 open QuantumChannel LownerHeinzCore
 
-theorem OperatorConvex.eq_zero_of_nontrivial
+theorem OperatorConvex_eq_zero_of_nontrivial
     {𝓐 : Type u} [CStarAlgebra 𝓐] [PartialOrder 𝓐] [StarOrderedRing 𝓐]
     [Nontrivial 𝓐] {f : ℝ → ℝ}
     (hf : OperatorConvex (𝓐 := 𝓐) f) : ∀ x, f x = 0 := by
@@ -375,7 +374,7 @@ end
 section
 open QuantumChannel LownerHeinzCore
 
-theorem OperatorConcave.eq_zero_of_nontrivial
+theorem OperatorConcave_eq_zero_of_nontrivial
     {𝓐 : Type u} [CStarAlgebra 𝓐] [PartialOrder 𝓐] [StarOrderedRing 𝓐] [Nontrivial 𝓐]
     {f : ℝ → ℝ} (hf : OperatorConcave (𝓐 := 𝓐) f) : ∀ x, f x = 0 := by
   sorry
@@ -385,7 +384,7 @@ end
 section
 open QuantumChannel LownerHeinzTheorem
 
-theorem OperatorConvexAll.eq_zero {f : ℝ → ℝ} (hf : OperatorConvexAll.{u} f) : f = 0 := by
+theorem OperatorConvexAll_eq_zero {f : ℝ → ℝ} (hf : OperatorConvexAll.{u} f) : f = 0 := by
   sorry
 
 end
@@ -393,7 +392,7 @@ end
 section
 open QuantumChannel LownerHeinzTheorem
 
-theorem OperatorConcaveAll.eq_zero {f : ℝ → ℝ} (hf : OperatorConcaveAll.{u} f) : f = 0 := by
+theorem OperatorConcaveAll_eq_zero {f : ℝ → ℝ} (hf : OperatorConcaveAll.{u} f) : f = 0 := by
   sorry
 
 end
@@ -427,13 +426,13 @@ end
 section
 open QuantumChannel SandwichedRenyiRelativeEntropy
 
-theorem sandwichedRenyiDivNN_monotone_of_isDensity
+theorem sandwichedRenyiDivNN_theorem1
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ] [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : CPTP ℋ 𝒦) {α : ℝ}
+    (E : CPTP ℋ 𝒦) {α : ℝ}
     (hα_ge : (1 : ℝ) / 2 ≤ α) (hα_ne1 : α ≠ 1)
     {ρ σ : L ℋ} (hρ : IsDensity ρ) (hσ : IsDensity σ)
     (_hσpd : IsPositiveDefinite σ) :
-    sandwichedRenyiDivNN α (Φ.toFun ρ) (Φ.toFun σ) ≤
+    sandwichedRenyiDivNN α (E.toFun ρ) (E.toFun σ) ≤
       sandwichedRenyiDivNN α ρ σ := by
   sorry
 
@@ -442,7 +441,7 @@ end
 section
 open QuantumChannel SandwichedRenyiRelativeEntropy
 
-theorem tendsto_sandwichedRenyiDiv_umegakiNorm_of_supportLE
+theorem sandwichedRenyi_tendsto_umegakiNorm_of_support
     {H : Type u} [Qudit H] [Nontrivial H] {ρ σ : L H}
     (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 0) (hσ : 0 ≤ σ) (hsupp : SupportLE ρ σ) :
     Filter.Tendsto (fun α => sandwichedRenyiDiv α ρ σ) (𝓝[≠] (1 : ℝ))

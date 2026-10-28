@@ -1,13 +1,14 @@
-import Quantum.QuantumEntropy.Common.PositiveDefiniteTensor
 /-
 Copyright (c) 2025-2026 Hayata Yamasaki. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Hayata Yamasaki
 -/
 
+import Quantum.QuantumEntropy.Common.PositiveDefiniteTensor
 import Quantum.QuantumEntropy.VonNeumann.StateTensor
 import Quantum.QuantumEntropy.VonNeumann.PartialTraceThirdCPTP
 import Quantum.QuantumEntropy.UmegakiDPI.NonNegLift
+import Quantum.QuantumEntropy.Common.PositiveDefiniteCertificatesStrongSubadditivity
 
 /-!
 # Strong subadditivity of the von Neumann entropy
@@ -20,7 +21,7 @@ for a state `ρ` on `ℋA ⊗ (ℋB ⊗ ℋC)` with positive-definite marginals,
 derived by the standard route:
 
 1. the data-processing inequality for the Umegaki relative entropy
-   (`umegakiNorm_monotone_nn`) applied to the CPTP channel
+   (`UmegakiDPI.monotoneNormOnNonNeg`) applied to the CPTP channel
    `CPTP.traceOutThird` tracing out the third factor;
 2. the mutual-information expansion
    `D(ρ ‖ ρ₁ ⊗ ρ₂) = S(ρ₁) + S(ρ₂) - S(ρ)`
@@ -299,15 +300,14 @@ section SSA
 variable {ℋA ℋB ℋC : Type u} [Qudit ℋA] [Qudit ℋB] [Qudit ℋC]
 variable [Nontrivial ℋA] [Nontrivial ℋB] [Nontrivial ℋC]
 
-/-- **Strong subadditivity of the von Neumann entropy**:
-for a state `ρ` on `ℋA ⊗ (ℋB ⊗ ℋC)` with faithful
-(positive-definite) marginals `ρ_A` and `ρ_BC`,
+/-- **Strong subadditivity of the von Neumann entropy**: for a state `ρ` on `ℋA ⊗ (ℋB ⊗ ℋC)` with
+faithful (positive-definite) marginals `ρ_A` and `ρ_BC`,
 
 `S(ρ_ABC) + S(ρ_B) ≤ S(ρ_AB) + S(ρ_BC)`.
 
-Proof: apply `UmegakiDPI.monotoneNormOnNonNeg` to the CPTP partial
-trace over `ℋC` with second argument `ρ_A ⊗ ρ_BC`, and expand both sides by
-`umegakiNorm_state_tensor_marginals`. The marginal `ρ_B` is automatically
+Proof: apply the Umegaki data-processing inequality (`UmegakiDPI.monotoneNormOnNonNeg`) to the CPTP
+partial trace over `ℋC` with second argument `ρ_A ⊗ ρ_BC`, and expand both sides by
+the mutual-information identity. The marginal `ρ_B` is automatically
 faithful because it is the partial trace of faithful `ρ_BC`. Extension to
 general, possibly non-faithful states is `strongSubadditivity_of_state`,
 proved below by faithful mixing and finite-dimensional entropy continuity. -/
@@ -370,12 +370,20 @@ S(ρ_ABC) + S(ρ_B) ≤ S(ρ_AB) + S(ρ_BC).
 
 The state assumptions are only that the tripartite density operator is
 positive semidefinite and has trace one; no additional faithfulness is assumed.
-The proof mixes ρ with the maximally mixed product state, applies the provider
-`strongSubadditivity` at every positive mixing parameter, and closes the
-inequality at zero using `tendsto_vonNeumannEntropy_faithful_mix`.
+The proof mixes ρ with the maximally mixed product state, applies the theorem
+`strongSubadditivity` above (the faithful-marginal case) at every positive mixing parameter, and
+closes the inequality at zero using `tendsto_vonNeumannEntropy_faithful_mix`.
 
-Original statement: Lieb–Ruskai (1973); Carlen (2025), Theorem 7.58, Eq. (7.5.1).
-The existing proof uses Umegaki DPI and faithful mixing. -/
+Original statement: Lieb–Ruskai (1973).
+The basic route of this proof follows Carlen's lecture notes (version of May 3, 2009), p. 47, proof
+of Theorem 6.6. The printed inequality in Theorem 6.6, S(ρ13) + S(ρ23) ≥ S(ρ123) + S(ρ3),
+becomes S(ρ_AB) + S(ρ_BC) ≥ S(ρ_ABC) + S(ρ_B) under (1, 2, 3) = (A, C, B),
+with the tensor factors permuted into the A ⊗ (B ⊗ C) order used in Lean.
+The formalization uses the partial trace over the third system directly instead of the
+conditional-expectation presentation. In the faithful-marginal case it proves the support inclusion
+needed for the data-processing inequality; the general case follows by faithful mixing and
+continuity of the entropy. The proof uses the Umegaki data-processing inequality and faithful
+mixing. -/
 theorem strongSubadditivity_of_state
     (ρ : L (ℋA ⊗[ℂ] (ℋB ⊗[ℂ] ℋC)))
     (hρ : 0 ≤ ρ)

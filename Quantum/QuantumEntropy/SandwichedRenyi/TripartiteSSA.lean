@@ -1,5 +1,7 @@
-import Quantum.QuantumEntropy.SandwichedRenyi.NonNeg.Monotonicity
+import Quantum.QuantumEntropy.SandwichedRenyi.NonNeg.Dispatcher.GSLCore
 import Quantum.QuantumEntropy.VonNeumann.SSA
+import Quantum.QuantumEntropy.UmegakiDPI.ViaPetz.FromRenyi.GSLCore
+
 
 /-!
 # Tripartite sandwiched Rényi data processing
@@ -24,8 +26,7 @@ universe u
 variable {A B C : Type u} [Qudit A] [Qudit B] [Qudit C]
 
 /-- The reference X_AB ⊗ Y_C, represented on A ⊗ (B ⊗ C).
-Source: arXiv:2607.05492v1 main.tex:209;
-tensor associativity bookkeeping for Frank–Lieb (2013), Thm. 1. -/
+Source: main.tex:209; tensor associativity bookkeeping for Frank–Lieb (2013), Thm. 1. -/
 noncomputable def tripartiteReference (X : L (A ⊗[ℂ] B)) (Y : L C) :
     L (A ⊗[ℂ] (B ⊗[ℂ] C)) :=
   conjugateEnd (TensorProduct.assoc ℂ A B C) (TensorProduct.map X Y)
@@ -124,7 +125,7 @@ theorem sandwichedRenyiDivNN_tripartiteSSA {α : ℝ} (hα : (1 : ℝ) / 2 ≤ �
     have hc := isPositiveMap_conjugate (TensorProduct.assocIsometry ℂ A B C).toLinearMap
       (TensorProduct.map (traceOutThird ρ) τ) hXY
     simpa only [LinearIsometryEquiv.adjoint_toLinearMap_eq_symm] using hc
-  have h := sandwichedRenyiDivNN_monotone (CPTP.traceOutLeft A (B ⊗[ℂ] C)) hα hα1 hρ hσ
+  have h := RenyiDPI.sandwichedRenyiDivNN_monotone (CPTP.traceOutLeft A (B ⊗[ℂ] C)) hα hα1 hρ hσ
   simpa only [CPTP.traceOutLeft_toFun, traceOutLeft_tripartiteReference,
     tripartite_middle_marginal] using h
 

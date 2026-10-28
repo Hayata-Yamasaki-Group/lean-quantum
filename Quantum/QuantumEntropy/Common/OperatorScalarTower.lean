@@ -5,6 +5,9 @@ Authors: Hayata Yamasaki
 -/
 
 import Quantum.QuantumEntropy.Common.PositiveDefiniteSet
+import Mathlib.Analysis.CStarAlgebra.Unitary.Span
+import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
 
 namespace SandwichedRenyiRelativeEntropy
 

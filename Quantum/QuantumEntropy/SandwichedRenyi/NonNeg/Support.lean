@@ -1,2 +1,4 @@
 import Quantum.QuantumEntropy.Common.Support
-import Quantum.QuantumEntropy.SandwichedRenyi.DefinitionCore
+import Quantum.QuantumMechanics.Channel.Equivalence
+import Quantum.TraceInequality.LownerHeinz.Reciprocal
+import Quantum.TraceInequality.LownerHeinzTheorem

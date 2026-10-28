@@ -7,7 +7,12 @@ Authors: Hayata Yamasaki
 import Quantum.QuantumEntropy.Common.SupportOrder
 import Quantum.QuantumEntropy.Common.PositiveDefinitePerturbation
 import Quantum.QuantumMechanics.Channel.Basic
-import Quantum.QuantumEntropy.Common.TraceReCore
+import Quantum.QuantumEntropy.Common.TraceRe
+import Quantum.QuantumMechanics.Channel.Amplification
+import Quantum.QuantumMechanics.Channel.TensorModel
+import Mathlib.Analysis.CStarAlgebra.Unitary.Span
+import Mathlib.Analysis.Convex.Continuous
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Order
 
 /-!
 # Non-negative sandwiched Rényi divergence: faithful approximation
@@ -25,29 +30,27 @@ universe u
 
 /-! ### Support preservation under positive maps -/
 
-/-- Positive maps preserve the support inclusion: if `supp ρ ⊂ supp σ` and `Φ` is
-    completely positive, then `supp (Φ ρ) ⊂ supp (Φ σ)`. -/
+/-- Positive maps preserve the support inclusion: if `supp ρ ⊂ supp σ` and `E` is
+    completely positive, then `supp (E ρ) ⊂ supp (E σ)`. -/
 lemma supportLE_map_of_cptp
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ] [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : QuantumChannel.CPTP ℋ 𝒦)
+    (E : QuantumChannel.CPTP ℋ 𝒦)
     {ρ σ : L ℋ} (hρ : 0 ≤ ρ) (hσ : 0 ≤ σ)
     (h : SupportLE ρ σ) :
-    SupportLE (Φ.toFun ρ) (Φ.toFun σ) := by
+    SupportLE (E.toFun ρ) (E.toFun σ) := by
   intro x hx
-  have hΦρ_nn : 0 ≤ Φ.toFun ρ :=
-    map_nonneg Φ.toCompletelyPositiveMap hρ
+  have hEρ_nn : 0 ≤ E.toFun ρ :=
+    map_nonneg E.toCompletelyPositiveMap hρ
   obtain ⟨lam, hlam_pos, hlam_le⟩ := nonneg_le_smul_of_suppLE hρ hσ h
-  have hΦρ_le :
-      Φ.toFun ρ ≤ (lam : ℂ) • Φ.toFun σ := by
-    have h1 := map_nonneg Φ.toCompletelyPositiveMap (sub_nonneg.mpr hlam_le)
+  have hEρ_le :
+      E.toFun ρ ≤ (lam : ℂ) • E.toFun σ := by
+    have h1 := map_nonneg E.toCompletelyPositiveMap (sub_nonneg.mpr hlam_le)
     rw [map_sub, map_smul] at h1
     exact sub_nonneg.mp h1
-  exact QuantumChannel.nonneg_eq_zero_of_le_of_apply_eq_zero hΦρ_nn hΦρ_le (by
+  exact QuantumChannel.nonneg_eq_zero_of_le_of_apply_eq_zero hEρ_nn hEρ_le (by
     rw [LinearMap.smul_apply, hx, smul_zero])
 
 /-! ### Outer-product helpers and the depolarizing-channel Kraus decomposition -/
-@[deprecated (since := "2026-09-05")]
-alias outer_product_apply := QuantumChannel.outer_product_apply
 
 /-- Adjoint of an outer product swaps its factors: `(|v⟩⟨u|)† = |u⟩⟨v|`. -/
 private lemma adjoint_outer_product {ℋ : Type u} [Qudit ℋ] (u v : ℋ) :
@@ -55,7 +58,8 @@ private lemma adjoint_outer_product {ℋ : Type u} [Qudit ℋ] (u v : ℋ) :
   apply LinearMap.ext; intro x
   apply ext_inner_right ℂ; intro y
   rw [LinearMap.adjoint_inner_left, QuantumChannel.outer_product_apply,
-      QuantumChannel.outer_product_apply, inner_smul_right, inner_smul_left, inner_conj_symm]
+      QuantumChannel.outer_product_apply,
+      inner_smul_right, inner_smul_left, inner_conj_symm]
   ring
 
 /-- **Kraus sum for the (cross-space) depolarizing channel.** With `bp` an orthonormal basis
@@ -90,7 +94,8 @@ private lemma depolarizing_kraus_sum
     rw [hadj]
     ext x
     simp only [LinearMap.comp_apply, LinearMap.smul_apply, map_smul,
-      QuantumChannel.outer_product_apply, smul_smul]
+      QuantumChannel.outer_product_apply,
+      smul_smul]
     congr 1
     ring
   -- Reassemble the double sum into `(c² · Tr γ) • 1_𝒦`.
@@ -166,79 +171,76 @@ noncomputable def depolarizingChannel
         rw [map_smul, smul_eq_mul, LinearMap.trace_one,
           div_mul_cancel₀ _ (Nat.cast_ne_zero.mpr Module.finrank_pos.ne')] }
 
-/-- The faithful approximating channel `F_λ := (1 − λ) Φ + λ · depolarizing`,
+/-- The faithful approximating channel `F_λ := (1 − λ) E + λ · depolarizing`,
     bundled as CPTP data for `0 ≤ λ ≤ 1`. -/
 noncomputable def faithfulApprox
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ] [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : QuantumChannel.CPTP ℋ 𝒦) (lam : ℝ)
+    (E : QuantumChannel.CPTP ℋ 𝒦) (lam : ℝ)
     (hlam0 : 0 ≤ lam) (hlam1 : lam ≤ 1) :
     QuantumChannel.CPTP ℋ 𝒦 where
-  toFun X := ((1 - lam : ℝ) : ℂ) • Φ.toFun X +
+  toFun X := ((1 - lam : ℝ) : ℂ) • E.toFun X +
     ((lam : ℝ) : ℂ) • (depolarizingChannel ℋ 𝒦).toFun X
   map_add' X Y := by
-    change ((1 - lam : ℝ) : ℂ) • Φ.toLinearMap (X + Y) +
+    change ((1 - lam : ℝ) : ℂ) • E.toLinearMap (X + Y) +
         ((lam : ℝ) : ℂ) • (depolarizingChannel ℋ 𝒦).toLinearMap (X + Y) =
-      (((1 - lam : ℝ) : ℂ) • Φ.toLinearMap X +
+      (((1 - lam : ℝ) : ℂ) • E.toLinearMap X +
           ((lam : ℝ) : ℂ) • (depolarizingChannel ℋ 𝒦).toLinearMap X) +
-        (((1 - lam : ℝ) : ℂ) • Φ.toLinearMap Y +
+        (((1 - lam : ℝ) : ℂ) • E.toLinearMap Y +
           ((lam : ℝ) : ℂ) • (depolarizingChannel ℋ 𝒦).toLinearMap Y)
-    rw [Φ.toLinearMap.map_add, (depolarizingChannel ℋ 𝒦).toLinearMap.map_add]
+    rw [E.toLinearMap.map_add, (depolarizingChannel ℋ 𝒦).toLinearMap.map_add]
     simp only [smul_add]
     abel
   map_smul' c X := by
-    change ((1 - lam : ℝ) : ℂ) • Φ.toLinearMap (c • X) +
+    change ((1 - lam : ℝ) : ℂ) • E.toLinearMap (c • X) +
         ((lam : ℝ) : ℂ) • (depolarizingChannel ℋ 𝒦).toLinearMap (c • X) =
-      c • (((1 - lam : ℝ) : ℂ) • Φ.toLinearMap X +
+      c • (((1 - lam : ℝ) : ℂ) • E.toLinearMap X +
         ((lam : ℝ) : ℂ) • (depolarizingChannel ℋ 𝒦).toLinearMap X)
-    rw [Φ.toLinearMap.map_smul, (depolarizingChannel ℋ 𝒦).toLinearMap.map_smul]
+    rw [E.toLinearMap.map_smul, (depolarizingChannel ℋ 𝒦).toLinearMap.map_smul]
     simp only [smul_add, smul_smul]
     rw [mul_comm c (((1 - lam : ℝ) : ℂ)), mul_comm c (((lam : ℝ) : ℂ))]
   map_cstarMatrix_nonneg' k M hM := by
-    have hΦM : 0 ≤ M.map Φ.toCompletelyPositiveMap :=
-      Φ.toCompletelyPositiveMap.map_cstarMatrix_nonneg' k M hM
+    have hEM : 0 ≤ M.map E.toCompletelyPositiveMap :=
+      E.toCompletelyPositiveMap.map_cstarMatrix_nonneg' k M hM
     have hDM : 0 ≤ M.map (depolarizingChannel ℋ 𝒦).toCompletelyPositiveMap :=
       (depolarizingChannel ℋ 𝒦).toCompletelyPositiveMap.map_cstarMatrix_nonneg' k M hM
     have heq : M.map (fun X =>
-        ((1 - lam : ℝ) : ℂ) • Φ.toFun X +
+        ((1 - lam : ℝ) : ℂ) • E.toFun X +
           ((lam : ℝ) : ℂ) • (depolarizingChannel ℋ 𝒦).toFun X) =
-        ((1 - lam : ℝ) : ℂ) • M.map Φ.toCompletelyPositiveMap +
+        ((1 - lam : ℝ) : ℂ) • M.map E.toCompletelyPositiveMap +
           ((lam : ℝ) : ℂ) • M.map (depolarizingChannel ℋ 𝒦).toCompletelyPositiveMap := by
       ext i j
       rfl
     change 0 ≤ M.map (fun X =>
-      ((1 - lam : ℝ) : ℂ) • Φ.toFun X +
+      ((1 - lam : ℝ) : ℂ) • E.toFun X +
         ((lam : ℝ) : ℂ) • (depolarizingChannel ℋ 𝒦).toFun X)
     rw [heq]
     exact add_nonneg
-      (smul_nonneg (Complex.zero_le_real.mpr (sub_nonneg.mpr hlam1)) hΦM)
+      (smul_nonneg (Complex.zero_le_real.mpr (sub_nonneg.mpr hlam1)) hEM)
       (smul_nonneg (Complex.zero_le_real.mpr hlam0) hDM)
   trace_map X := by
     rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul,
-      ← Φ.trace_map X, ← (depolarizingChannel ℋ 𝒦).trace_map X]
+      ← E.trace_map X, ← (depolarizingChannel ℋ 𝒦).trace_map X]
     push_cast
     ring
-
-@[deprecated (since := "2026-09-05")]
-alias trace_re_pos_of_ne_zero := QuantumEntropy.trace_re_pos_of_ne_zero
 
 /-- For `0 < λ ≤ 1`, the approximating channel is faithful (`F_λ 1_ℋ` is positive definite
     in the target `𝒦`). -/
 lemma faithfulApprox_one_pdSetLM
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ] [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : QuantumChannel.CPTP ℋ 𝒦)
+    (E : QuantumChannel.CPTP ℋ 𝒦)
     {lam : ℝ} (hlam0 : 0 < lam) (hlam1 : lam ≤ 1) :
-    (faithfulApprox Φ lam hlam0.le hlam1).toFun (1 : L ℋ) ∈ pdSetLM (ℋ := 𝒦) := by
-  -- `F_λ 1_ℋ = (1-λ) Φ 1 + λ • (Tr 1_ℋ / d_𝒦) • 1_𝒦 = (1-λ) Φ 1 +
+    (faithfulApprox E lam hlam0.le hlam1).toFun (1 : L ℋ) ∈ pdSetLM (ℋ := 𝒦) := by
+  -- `F_λ 1_ℋ = (1-λ) E 1 + λ • (Tr 1_ℋ / d_𝒦) • 1_𝒦 = (1-λ) E 1 +
   -- (λ·d_ℋ/d_𝒦) • 1_𝒦`.
   have hdℋ_pos : 0 < (Module.finrank ℂ ℋ : ℝ) := by exact_mod_cast Module.finrank_pos
   have hd𝒦_pos : 0 < (Module.finrank ℂ 𝒦 : ℝ) := by exact_mod_cast Module.finrank_pos
   have h_F1 :
-      (faithfulApprox Φ lam hlam0.le hlam1).toFun (1 : L ℋ) =
+      (faithfulApprox E lam hlam0.le hlam1).toFun (1 : L ℋ) =
         ((1 - lam : ℝ) : ℂ) •
-          Φ.toFun (1 : L ℋ) +
+          E.toFun (1 : L ℋ) +
         ((lam * Module.finrank ℂ ℋ / Module.finrank ℂ 𝒦 : ℝ) : ℂ) •
           (1 : L 𝒦) := by
-    change ((1 - lam : ℝ) : ℂ) • Φ.toFun (1 : L ℋ) +
+    change ((1 - lam : ℝ) : ℂ) • E.toFun (1 : L ℋ) +
       ((lam : ℝ) : ℂ) •
         ((Tr (1 : L ℋ) / (Module.finrank ℂ 𝒦 : ℂ)) • (1 : L 𝒦)) = _
     rw [LinearMap.trace_one]
@@ -247,15 +249,15 @@ lemma faithfulApprox_one_pdSetLM
     push_cast
     ring
   rw [h_F1]
-  -- `(1-λ) Φ 1 ≥ 0` (since `1 ≥ 0`, `Φ` preserves `≥ 0`, `1-λ ≥ 0`).
-  have h_Φ1_nn : (0 : L 𝒦) ≤ Φ.toFun (1 : L ℋ) :=
-    map_nonneg Φ.toCompletelyPositiveMap zero_le_one
+  -- `(1-λ) E 1 ≥ 0` (since `1 ≥ 0`, `E` preserves `≥ 0`, `1-λ ≥ 0`).
+  have h_E1_nn : (0 : L 𝒦) ≤ E.toFun (1 : L ℋ) :=
+    map_nonneg E.toCompletelyPositiveMap zero_le_one
   have h_coef_nn : (0 : ℂ) ≤ ((1 - lam : ℝ) : ℂ) :=
     Complex.zero_le_real.mpr (by linarith)
   have h_first_nn : (0 : L 𝒦) ≤
-      ((1 - lam : ℝ) : ℂ) • Φ.toFun (1 : L ℋ) :=
-    smul_nonneg h_coef_nn h_Φ1_nn
-  -- Use `pos_smul_one_pdSetLM` for the positive scalar multiple of the identity.
+      ((1 - lam : ℝ) : ℂ) • E.toFun (1 : L ℋ) :=
+    smul_nonneg h_coef_nn h_E1_nn
+  -- Use strict positivity to place the positive scalar directly in the CLM `pdSet`.
   have h_second_pd :
       ((lam * Module.finrank ℂ ℋ / Module.finrank ℂ 𝒦 : ℝ) : ℂ) •
           (1 : L 𝒦) ∈ pdSetLM (ℋ := 𝒦) :=
@@ -268,10 +270,10 @@ lemma faithfulApprox_one_pdSetLM
     (since `Tr ρ > 0`) and the first is non-negative. -/
 lemma faithfulApprox_pdSetLM
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ] [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : QuantumChannel.CPTP ℋ 𝒦)
+    (E : QuantumChannel.CPTP ℋ 𝒦)
     {lam : ℝ} (hlam0 : 0 < lam) (hlam1 : lam ≤ 1)
     {ρ : L ℋ} (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 0) :
-    (faithfulApprox Φ lam hlam0.le hlam1).toFun ρ ∈ pdSetLM (ℋ := 𝒦) := by
+    (faithfulApprox E lam hlam0.le hlam1).toFun ρ ∈ pdSetLM (ℋ := 𝒦) := by
   have hd_pos : 0 < (Module.finrank ℂ 𝒦 : ℝ) := by exact_mod_cast Module.finrank_pos
   have hTrρ_pos : 0 < (Tr ρ).re := QuantumEntropy.trace_re_pos_of_ne_zero hρ hρ0
   -- `Tr ρ` is real (`ρ` non-negative, hence self-adjoint).
@@ -287,67 +289,67 @@ lemma faithfulApprox_pdSetLM
     set t : ℝ := (Tr ρ).re with ht
     rw [hTr_real]; push_cast; ring
   have h_Fρ :
-      (faithfulApprox Φ lam hlam0.le hlam1).toFun ρ =
+      (faithfulApprox E lam hlam0.le hlam1).toFun ρ =
         ((1 - lam : ℝ) : ℂ) •
-          Φ.toFun ρ +
+          E.toFun ρ +
         ((lam * (Tr ρ).re / Module.finrank ℂ 𝒦 : ℝ) : ℂ) •
           (1 : L 𝒦) := by
-    change ((1 - lam : ℝ) : ℂ) • Φ.toFun ρ +
+    change ((1 - lam : ℝ) : ℂ) • E.toFun ρ +
       ((lam : ℝ) : ℂ) •
         ((Tr ρ / (Module.finrank ℂ 𝒦 : ℂ)) • (1 : L 𝒦)) = _
     simp only [smul_smul]
     change ((1 - lam : ℝ) : ℂ) •
-        Φ.toFun ρ +
+        E.toFun ρ +
       (((lam : ℝ) : ℂ) * (Tr ρ / (Module.finrank ℂ 𝒦 : ℂ))) •
         (1 : L 𝒦) = _
     rw [hscalar]
   rw [h_Fρ]
-  have hΦρ_nn : (0 : L 𝒦) ≤ Φ.toFun ρ :=
-    map_nonneg Φ.toCompletelyPositiveMap hρ
+  have hEρ_nn : (0 : L 𝒦) ≤ E.toFun ρ :=
+    map_nonneg E.toCompletelyPositiveMap hρ
   have h_first_nn : (0 : L 𝒦) ≤
-      ((1 - lam : ℝ) : ℂ) • Φ.toFun ρ :=
-    smul_nonneg (Complex.zero_le_real.mpr (by linarith)) hΦρ_nn
+      ((1 - lam : ℝ) : ℂ) • E.toFun ρ :=
+    smul_nonneg (Complex.zero_le_real.mpr (by linarith)) hEρ_nn
   have h_second_pd :
       ((lam * (Tr ρ).re / Module.finrank ℂ 𝒦 : ℝ) : ℂ) •
           (1 : L 𝒦) ∈ pdSetLM (ℋ := 𝒦) :=
     pos_smul_one_pdSetLM (div_pos (mul_pos hlam0 hTrρ_pos) hd_pos)
   exact pdSetLM_add_nonneg h_first_nn h_second_pd
 
-/-- `F_λ X → Φ X` as `λ → 0+`. -/
-lemma tendsto_faithfulApprox
+/-- `F_λ X → E X` as `λ → 0+`. -/
+lemma faithfulApprox_tendsto
     {ℋ 𝒦 : Type u} [Qudit ℋ] [Nontrivial ℋ] [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : QuantumChannel.CPTP ℋ 𝒦) (X : L ℋ) :
+    (E : QuantumChannel.CPTP ℋ 𝒦) (X : L ℋ) :
     Filter.Tendsto
       (fun (lam : {l : ℝ // 0 < l ∧ l ≤ 1}) =>
-        (faithfulApprox Φ lam.val lam.property.1.le lam.property.2).toFun X)
+        (faithfulApprox E lam.val lam.property.1.le lam.property.2).toFun X)
       (Filter.comap (fun lam : {l : ℝ // 0 < l ∧ l ≤ 1} => lam.val)
         (nhdsWithin 0 (Set.Ioi 0)))
-      (nhds (Φ.toFun X)) := by
-  -- Extend to all `lam : ℝ`: `g lam = (1-lam) • Φ X + lam • c` where `c = (Tr X /
+      (nhds (E.toFun X)) := by
+  -- Extend to all `lam : ℝ`: `g lam = (1-lam) • E X + lam • c` where `c = (Tr X /
   -- d_𝒦) • 1_𝒦`.
   let c : L 𝒦 := (Tr X / (Module.finrank ℂ 𝒦 : ℂ)) • (1 : L 𝒦)
   let g : ℝ → L 𝒦 :=
-    fun lam => ((1 - lam : ℝ) : ℂ) • Φ.toFun X + ((lam : ℝ) : ℂ) • c
+    fun lam => ((1 - lam : ℝ) : ℂ) • E.toFun X + ((lam : ℝ) : ℂ) • c
   -- The defining formula of `F_λ X` matches `g lam.val` definitionally.
   have h_F_eq : ∀ (lam : {l : ℝ // 0 < l ∧ l ≤ 1}),
-      (faithfulApprox Φ lam.val lam.property.1.le lam.property.2).toFun X = g lam.val := by
+      (faithfulApprox E lam.val lam.property.1.le lam.property.2).toFun X = g lam.val := by
     intro lam
     rfl
   simp_rw [h_F_eq]
   -- `g` is continuous on ℝ.
   have hg_cont : Continuous g := by
     change Continuous (fun lam : ℝ =>
-      ((1 - lam : ℝ) : ℂ) • Φ.toFun X +
+      ((1 - lam : ℝ) : ℂ) • E.toFun X +
         ((lam : ℝ) : ℂ) • c)
     fun_prop
-  -- `g 0 = Φ X` after CLM conjugation.
-  have hg_zero : g 0 = Φ.toFun X := by
-    change ((1 - (0 : ℝ) : ℝ) : ℂ) • Φ.toFun X +
-      (((0 : ℝ)) : ℂ) • c = Φ.toFun X
+  -- `g 0 = E X` after CLM conjugation.
+  have hg_zero : g 0 = E.toFun X := by
+    change ((1 - (0 : ℝ) : ℝ) : ℂ) • E.toFun X +
+      (((0 : ℝ)) : ℂ) • c = E.toFun X
     simp
   -- Tendsto in ℝ at 0 (from the right) follows from continuity at 0.
   have h_real : Filter.Tendsto g (nhdsWithin 0 (Set.Ioi 0))
-      (nhds (Φ.toFun X)) := by
+      (nhds (E.toFun X)) := by
     rw [← hg_zero]
     exact (hg_cont.tendsto 0).mono_left nhdsWithin_le_nhds
   -- Transfer along the subtype projection via `comap`.

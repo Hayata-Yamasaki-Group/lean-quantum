@@ -9,8 +9,7 @@ import Quantum.QuantumEntropy.SandwichedRenyi.NonNeg.Main
 /-!
 # Sandwiched Rényi divergence on non-negative operators
 
-This module re-exports the non-negative sandwiched Rényi development.
-
-It provides definitions, faithful approximations, continuity,
-and data-processing theorems through `NonNeg.Main`.
+This module re-exports the four topic files under
+`Quantum.QuantumEntropy.SandwichedRenyi.NonNeg`: definitions, faithful approximation,
+continuity, and the main Frank-Lieb monotonicity theorems.
 -/

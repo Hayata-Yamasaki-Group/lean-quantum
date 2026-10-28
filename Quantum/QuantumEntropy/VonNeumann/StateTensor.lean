@@ -6,8 +6,9 @@ Authors: Hayata Yamasaki
 
 import Quantum.QuantumEntropy.VonNeumann.Basic
 import Quantum.QuantumEntropy.VonNeumann.TensorLog
-import Quantum.QuantumEntropy.HaarUnitaryMeasureCore
-import Quantum.QuantumEntropy.UmegakiDPI.AlphaOneDefinitions
+
+import Quantum.QuantumEntropy.Common.Umegaki.GSLCore
+import Quantum.QuantumMechanics.Channel.Representations
 
 /-!
 # Entropy expansion of `D(ρ‖σ₁ ⊗ σ₂)`
@@ -144,6 +145,31 @@ private lemma trace_mul_log_toContinuousLinearMap (A : L ℋ₁) :
         L ℋ₁)) := by
   congr 1
 
+omit [Nontrivial ℋ₁] [Nontrivial ℋ₂] in
+/-- Expanding `ρ (log ρ - (P + Q))` after returning to linear maps. -/
+private lemma coe_mul_log_sub_add {E : Type u} [Qudit E] (ρ : L E) (Lρ : B E) (P Q : L E) :
+    ((ρ.toContinuousLinearMap * (Lρ - (P.toContinuousLinearMap + Q.toContinuousLinearMap)) :
+        B E) : L E) =
+      ((ρ.toContinuousLinearMap * Lρ : B E) : L E) - (ρ * P + ρ * Q) := by
+  rw [mul_sub, mul_add]
+  ext x
+  rfl
+
+omit [Nontrivial ℋ₁] [Nontrivial ℋ₂] in
+/-- The trace identity behind the entropy expansion, for arbitrary operators `X`, `Y` in the
+tensor slots. -/
+private lemma re_trace_mul_log_sub_tensor (ρ : L (ℋ₁ ⊗[ℂ] ℋ₂)) (X : L ℋ₁) (Y : L ℋ₂) :
+    (Tr (((ρ.toContinuousLinearMap * (CFC.log ρ.toContinuousLinearMap -
+        ((TensorProduct.map X 1).toContinuousLinearMap +
+          (TensorProduct.map 1 Y).toContinuousLinearMap))) : B (ℋ₁ ⊗[ℂ] ℋ₂)) :
+        L (ℋ₁ ⊗[ℂ] ℋ₂))).re =
+      -vonNeumannEntropy ρ
+        - (Tr (QuantumChannel.traceOutRight ρ * X)).re
+        - (Tr (QuantumChannel.traceOutLeft ρ * Y)).re := by
+  rw [coe_mul_log_sub_add, map_sub, map_add, Complex.sub_re, Complex.add_re,
+    trace_mul_tensorMap_one ρ X, trace_mul_one_tensorMap ρ Y, vonNeumannEntropy_def]
+  ring
+
 /-- **Entropy expansion of the Umegaki relative entropy against a tensor
 second argument**: for a state `ρ` and positive-definite
 `σ₁, σ₂`,
@@ -169,32 +195,8 @@ theorem umegakiNorm_state_tensor (ρ : L (ℋ₁ ⊗[ℂ] ℋ₂)) (σ₁ : L �
       (TensorProduct.map (σ₁.toContinuousLinearMap : L ℋ₁)
         (σ₂.toContinuousLinearMap : L ℋ₂)).toContinuousLinearMap := by
     rw [hσ₁_lm, hσ₂_lm]
-  rw [hTr, Complex.one_re, div_one, hmap,
-    log_tensorMap σ₁ σ₂ hσ₁ hσ₂]
-  rw [mul_sub, mul_add]
-  rw [show ((ρ.toContinuousLinearMap * CFC.log ρ.toContinuousLinearMap -
-        (ρ.toContinuousLinearMap *
-            (TensorProduct.map ((CFC.log σ₁.toContinuousLinearMap : B ℋ₁) : L ℋ₁)
-              1).toContinuousLinearMap +
-          ρ.toContinuousLinearMap *
-            (TensorProduct.map 1
-              ((CFC.log σ₂.toContinuousLinearMap : B ℋ₂) : L ℋ₂)).toContinuousLinearMap) :
-        B (ℋ₁ ⊗[ℂ] ℋ₂)) : L (ℋ₁ ⊗[ℂ] ℋ₂)) =
-      (ρ * ((CFC.log ρ.toContinuousLinearMap : B (ℋ₁ ⊗[ℂ] ℋ₂)) :
-          L (ℋ₁ ⊗[ℂ] ℋ₂))) -
-        (ρ * TensorProduct.map ((CFC.log σ₁.toContinuousLinearMap : B ℋ₁) : L ℋ₁) 1 +
-          ρ * TensorProduct.map 1
-            ((CFC.log σ₂.toContinuousLinearMap : B ℋ₂) : L ℋ₂)) from by
-      ext x
-      rfl]
-  rw [map_sub, map_add, Complex.sub_re, Complex.add_re]
-  rw [trace_mul_tensorMap_one ρ
-      ((CFC.log σ₁.toContinuousLinearMap : B ℋ₁) : L ℋ₁),
-    trace_mul_one_tensorMap ρ
-      ((CFC.log σ₂.toContinuousLinearMap : B ℋ₂) : L ℋ₂)]
-  rw [vonNeumannEntropy_def]
-  rw [trace_mul_log_toContinuousLinearMap ρ]
-  ring
+  rw [hTr, Complex.one_re, div_one, hmap, log_tensorMap σ₁ σ₂ hσ₁ hσ₂]
+  exact re_trace_mul_log_sub_tensor ρ _ _
 
 /-- **Mutual-information form** of the entropy expansion: for a state `ρ`
 whose marginals are positive definite,

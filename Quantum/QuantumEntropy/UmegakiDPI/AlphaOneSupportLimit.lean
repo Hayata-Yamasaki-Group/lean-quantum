@@ -8,8 +8,7 @@ universe u
 variable {H : Type u} [Qudit H] [Nontrivial H]
 attribute [local instance] subspaceQudit
 
-/-- Use `quasi_derivative_psd_pd`, `compression_domain`, and `compression_invariance`
-to differentiate the logarithm; the trace is positive. -/
+/-- C06: transport C05 by C01/C02, then differentiate log with positive trace. -/
 lemma log_quasi_derivative_support {ρ σ : L H} (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 0)
     (hσ : 0 ≤ σ) (hsupp : SupportLE ρ σ) :
     HasDerivAt (fun α => Real.log (sandwichedQuasi α ρ σ).re)
@@ -36,7 +35,6 @@ lemma log_quasi_derivative_support {ρ σ : L H} (hρ : 0 ≤ ρ) (hρ0 : ρ ≠
   exact congrArg (fun z : ℂ => Real.log z.re) (hQ α hα).symm
 
 
-
 end SandwichedRenyiRelativeEntropy.AlphaOneSupport
 
 namespace SandwichedRenyiRelativeEntropy
@@ -44,8 +42,9 @@ open AlphaOneSupport
 universe u
 variable {H : Type u} [Qudit H] [Nontrivial H]
 
-/-- The two-sided alpha-one limit on the full nonzero PSD support domain. -/
-theorem tendsto_sandwichedRenyiDiv_umegakiNorm_of_supportLE {ρ σ : L H}
+/-- The two-sided alpha-one limit on the full nonzero PSD support domain
+(arXiv:2607.05492v1, Section 1.5). -/
+theorem sandwichedRenyi_tendsto_umegakiNorm_of_support {ρ σ : L H}
     (hρ : 0 ≤ ρ) (hρ0 : ρ ≠ 0) (hσ : 0 ≤ σ) (hsupp : SupportLE ρ σ) :
     Filter.Tendsto (fun α => sandwichedRenyiDiv α ρ σ) (𝓝[≠] (1 : ℝ))
       (𝓝 (umegakiNorm ρ σ)) := by

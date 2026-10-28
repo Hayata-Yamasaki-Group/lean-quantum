@@ -5,9 +5,9 @@ Authors: Hayata Yamasaki
 -/
 
 import Quantum.QuantumEntropy.CFCDeriv
-import Quantum.QuantumEntropy.UmegakiDPI.AlphaOneDefinitions
 import Quantum.QuantumEntropy.Common.FaithfulApproximation
-import Quantum.QuantumEntropy.Common.TraceNonnegativeLinear
+import Quantum.QuantumEntropy.Common.TraceNonnegative
+import Quantum.QuantumEntropy.Common.Umegaki.GSLCore
 
 /-!
 # Umegaki continuity and faithful-approximation reduction
@@ -32,10 +32,10 @@ section Umegaki
 /-- A trace-preserving channel cannot annihilate a nonzero nonnegative input. -/
 private lemma continuity_cptp_toFun_ne_zero
     {H K : Type u} [Qudit H] [Nontrivial H] [Qudit K] [Nontrivial K]
-    (Φ : CPTP H K) {rho : L H} (hrho : 0 ≤ rho) (hrho0 : rho ≠ 0) :
-    Φ.toFun rho ≠ 0 := by
+    (E : CPTP H K) {rho : L H} (hrho : 0 ≤ rho) (hrho0 : rho ≠ 0) :
+    E.toFun rho ≠ 0 := by
   intro hzero
-  have htrace := Φ.trace_map rho
+  have htrace := E.trace_map rho
   have htr : (Tr rho).re = 0 := by
     rw [htrace, hzero]
     simp
@@ -57,6 +57,7 @@ private lemma reduction_toCLM_toLinearMap (f : B ℋ) :
     (f : L ℋ).toContinuousLinearMap = f := by
   ext x
   rfl
+
 
 /-! ### Singular-boundary continuity for Umegaki norm -/
 /-- Boundary continuity of the cross term `Re Tr((ρ+ε)·log(σ+ε)) → Re Tr(ρ·log σ)`
@@ -215,9 +216,7 @@ private lemma tendsto_umegakiNorm_perturb_clm {ρ σ : B ℋ}
         simp only [mul_sub, reduction_trace_sub, Complex.sub_re]]
     exact hcrossρ.sub hcrossσ
   have hden0 : (Tr (ContinuousLinearMap.toLinearMap ρ)).re ≠ 0 :=
-    ne_of_gt (QuantumEntropy.trace_re_pos_of_ne_zero
-      ((ContinuousLinearMap.coe_le_coe_iff _ _).mpr hρ)
-      (fun h => hρ0 (by ext x; exact congrArg (fun A : L _ => A x) h)))
+    ne_of_gt (trace_re_pos_of_ne_zero_clm hρ hρ0)
   have hres := hnum.div (tendsto_tr_perturb (ρ := ρ)) hden0
   simpa only [umegakiNorm_eq_toContinuousLinearMap, reduction_toCLM_toLinearMap] using hres
 
@@ -304,6 +303,7 @@ lemma tendsto_umegakiNorm_within {𝒦 : Type u} [Qudit 𝒦] [Nontrivial 𝒦]
   have hlim := tendsto_umegakiNorm_within_clm ha' hb' ha_mem' hb_mem'
     ⟨hsa ha0.1, hu ha0.2⟩ ⟨hsa hb0.1, hu hb0.2⟩ hTra0
   simpa [e] using hlim
+
 
 lemma tendsto_uloglu : Filter.Tendsto (fun u : ℝ => u * Real.log u) (𝓝[>] (0:ℝ)) (𝓝
   0) := by
@@ -463,10 +463,10 @@ lemma tr_eq_re {τ : L ℋ} (hτ : 0 ≤ τ) :
 
 -- `faithfulApprox` in explicit bundled-CPTP form.
 lemma faithfulApprox_toFun_eq {𝒦 : Type u} [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : CPTP ℋ 𝒦) {lam : ℝ} (hlam0 : 0 ≤ lam) (hlam1 : lam ≤ 1)
+    (E : CPTP ℋ 𝒦) {lam : ℝ} (hlam0 : 0 ≤ lam) (hlam1 : lam ≤ 1)
     {τ : L ℋ} (hτ : 0 ≤ τ) :
-    (faithfulApprox Φ lam hlam0 hlam1).toFun τ =
-      ((1 - lam : ℝ) : ℂ) • Φ.toFun τ +
+    (faithfulApprox E lam hlam0 hlam1).toFun τ =
+      ((1 - lam : ℝ) : ℂ) • E.toFun τ +
         ((lam * ((Tr τ).re /
           (Module.finrank ℂ 𝒦 : ℝ)) : ℝ) : ℂ) • (1 : L 𝒦) := by
   have hdepol : ((lam : ℝ) : ℂ) •
@@ -481,35 +481,35 @@ lemma faithfulApprox_toFun_eq {𝒦 : Type u} [Qudit 𝒦] [Nontrivial 𝒦]
     nth_rewrite 1 [tr_eq_re hτ]
     push_cast
     ring
-  change ((1 - lam : ℝ) : ℂ) • Φ.toFun τ +
+  change ((1 - lam : ℝ) : ℂ) • E.toFun τ +
     ((lam : ℝ) : ℂ) •
       (depolarizingChannel ℋ 𝒦).toFun τ = _
   rw [hdepol]
 
 theorem tendsto_umegakiNorm_faithful_real
     {𝒦 : Type u} [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : CPTP ℋ 𝒦)
+    (E : CPTP ℋ 𝒦)
     {ρ σ : L ℋ} (hρ : 0 ≤ ρ) (hσ : 0 ≤ σ) (hρ0 : ρ ≠ 0)
     (hsupp : SupportLE ρ σ) :
     Filter.Tendsto
       (fun lam : ℝ =>
         umegakiNorm
-          (((1 - lam : ℝ) : ℂ) • Φ.toFun ρ +
+          (((1 - lam : ℝ) : ℂ) • E.toFun ρ +
             ((lam * ((Tr ρ).re /
               (Module.finrank ℂ 𝒦 : ℝ)) : ℝ) : ℂ) • 1)
-          (((1 - lam : ℝ) : ℂ) • Φ.toFun σ +
+          (((1 - lam : ℝ) : ℂ) • E.toFun σ +
             ((lam * ((Tr σ).re /
               (Module.finrank ℂ 𝒦 : ℝ)) : ℝ) : ℂ) • 1))
       (𝓝[>] (0:ℝ)) (𝓝 (umegakiNorm
-        (Φ.toFun ρ)
-        (Φ.toFun σ))) := by
-  have hΦρ : (0 : L 𝒦) ≤ Φ.toFun ρ :=
-    map_nonneg Φ.toCompletelyPositiveMap hρ
-  have hΦσ : (0 : L 𝒦) ≤ Φ.toFun σ :=
-    map_nonneg Φ.toCompletelyPositiveMap hσ
-  have hΦsupp := supportLE_map_of_cptp Φ hρ hσ hsupp
-  have hΦρ0 : Φ.toFun ρ ≠ 0 :=
-    continuity_cptp_toFun_ne_zero Φ hρ hρ0
+        (E.toFun ρ)
+        (E.toFun σ))) := by
+  have hEρ : (0 : L 𝒦) ≤ E.toFun ρ :=
+    map_nonneg E.toCompletelyPositiveMap hρ
+  have hEσ : (0 : L 𝒦) ≤ E.toFun σ :=
+    map_nonneg E.toCompletelyPositiveMap hσ
+  have hEsupp := supportLE_map_of_cptp E hρ hσ hsupp
+  have hEρ0 : E.toFun ρ ≠ 0 :=
+    continuity_cptp_toFun_ne_zero E hρ hρ0
   have hσ0 : σ ≠ 0 := by
     rintro rfl
     obtain ⟨_, _, h⟩ := nonneg_le_smul_of_suppLE hρ hσ hsupp
@@ -525,17 +525,17 @@ theorem tendsto_umegakiNorm_faithful_real
     (Module.finrank ℂ 𝒦 : ℝ) with hcρ_def
   set cσ := (Tr σ).re /
     (Module.finrank ℂ 𝒦 : ℝ) with hcσ_def
-  let Eρc : B 𝒦 := (Φ.toFun ρ).toContinuousLinearMap
-  let Eσc : B 𝒦 := (Φ.toFun σ).toContinuousLinearMap
-  have hΦρc : 0 ≤ Eρc := (ContinuousLinearMap.coe_le_coe_iff 0 Eρc).mp hΦρ
-  have hΦσc : 0 ≤ Eσc := (ContinuousLinearMap.coe_le_coe_iff 0 Eσc).mp hΦσ
-  have hΦρc0 : Eρc ≠ 0 := by
+  let Eρc : B 𝒦 := (E.toFun ρ).toContinuousLinearMap
+  let Eσc : B 𝒦 := (E.toFun σ).toContinuousLinearMap
+  have hEρc : 0 ≤ Eρc := (ContinuousLinearMap.coe_le_coe_iff 0 Eρc).mp hEρ
+  have hEσc : 0 ≤ Eσc := (ContinuousLinearMap.coe_le_coe_iff 0 Eσc).mp hEσ
+  have hEρc0 : Eρc ≠ 0 := by
     intro h
-    apply hΦρ0
+    apply hEρ0
     exact LinearMap.toContinuousLinearMap.injective h
-  have hxlogx := tendsto_tr_faithful_cross hΦρc hΦρc (le_refl _)
+  have hxlogx := tendsto_tr_faithful_cross hEρc hEρc (le_refl _)
     (cA := cρ) (cB := cρ) hcρ
-  have hcross := tendsto_tr_faithful_cross hΦσc hΦρc hΦsupp
+  have hcross := tendsto_tr_faithful_cross hEσc hEρc hEsupp
     (cA := cσ) (cB := cρ) hcσ
   have hden : Filter.Tendsto
       (fun lam : ℝ => (Tr (ContinuousLinearMap.toLinearMap
@@ -571,44 +571,44 @@ theorem tendsto_umegakiNorm_faithful_real
       hxlogx.sub hcross
   have hden0 : (Tr (ContinuousLinearMap.toLinearMap
       Eρc)).re ≠ 0 :=
-    ne_of_gt (QuantumEntropy.trace_re_pos_of_ne_zero
-      ((ContinuousLinearMap.coe_le_coe_iff _ _).mpr hΦρc)
-      (fun h => hΦρc0 (by ext x; exact congrArg (fun A : L _ => A x) h)))
+    ne_of_gt (trace_re_pos_of_ne_zero_clm hEρc hEρc0)
   simpa only [umegakiNorm_eq_toContinuousLinearMap, Eρc, Eσc] using hnum.div hden hden0
 
 theorem tendsto_umegakiNorm_faithful
     {𝒦 : Type u} [Qudit 𝒦] [Nontrivial 𝒦]
-    (Φ : CPTP ℋ 𝒦)
+    (E : CPTP ℋ 𝒦)
     {ρ σ : L ℋ} (hρ : 0 ≤ ρ) (hσ : 0 ≤ σ) (hρ0 : ρ ≠ 0)
     (hsupp : SupportLE ρ σ) :
     Filter.Tendsto
       (fun l : {l : ℝ // 0 < l ∧ l ≤ 1} =>
         umegakiNorm
-          ((faithfulApprox Φ l.val l.property.1.le l.property.2).toFun ρ)
-          ((faithfulApprox Φ l.val l.property.1.le l.property.2).toFun σ))
+          ((faithfulApprox E l.val l.property.1.le l.property.2).toFun ρ)
+          ((faithfulApprox E l.val l.property.1.le l.property.2).toFun σ))
       (Filter.comap (fun l : {l : ℝ // 0 < l ∧ l ≤ 1} => l.val) (𝓝[>] (0:ℝ)))
-      (𝓝 (umegakiNorm (Φ.toFun ρ)
-        (Φ.toFun σ))) := by
+      (𝓝 (umegakiNorm (E.toFun ρ)
+        (E.toFun σ))) := by
   have heq : (fun l : {l : ℝ // 0 < l ∧ l ≤ 1} =>
         umegakiNorm
-          ((faithfulApprox Φ l.val l.property.1.le l.property.2).toFun ρ)
-          ((faithfulApprox Φ l.val l.property.1.le l.property.2).toFun σ))
+          ((faithfulApprox E l.val l.property.1.le l.property.2).toFun ρ)
+          ((faithfulApprox E l.val l.property.1.le l.property.2).toFun σ))
       = (fun lam : ℝ =>
           umegakiNorm
-            (((1 - lam : ℝ) : ℂ) • Φ.toFun ρ +
+            (((1 - lam : ℝ) : ℂ) • E.toFun ρ +
               ((lam * ((Tr ρ).re /
                 (Module.finrank ℂ 𝒦 : ℝ)) : ℝ) : ℂ) • 1)
-            (((1 - lam : ℝ) : ℂ) • Φ.toFun σ +
+            (((1 - lam : ℝ) : ℂ) • E.toFun σ +
               ((lam * ((Tr σ).re /
                 (Module.finrank ℂ 𝒦 : ℝ)) : ℝ) : ℂ) • 1))
         ∘ (fun l : {l : ℝ // 0 < l ∧ l ≤ 1} => l.val) := by
     funext l
-    have hρ_eq := faithfulApprox_toFun_eq Φ l.property.1.le l.property.2 hρ
-    have hσ_eq := faithfulApprox_toFun_eq Φ l.property.1.le l.property.2 hσ
+    have hρ_eq := faithfulApprox_toFun_eq E l.property.1.le l.property.2 hρ
+    have hσ_eq := faithfulApprox_toFun_eq E l.property.1.le l.property.2 hσ
     simp only [Function.comp_apply, hρ_eq, hσ_eq]
   rw [heq]
-  exact (tendsto_umegakiNorm_faithful_real Φ hρ hσ hρ0 hsupp).comp
+  exact (tendsto_umegakiNorm_faithful_real E hρ hσ hρ0 hsupp).comp
     Filter.tendsto_comap
+
+
 
 end Umegaki
 

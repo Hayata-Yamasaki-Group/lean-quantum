@@ -1,303 +1,267 @@
 <p align="right"><a href="README.md"><img alt="English" src="https://img.shields.io/badge/English-lightgrey?style=for-the-badge"></a> <img alt="日本語" src="https://img.shields.io/badge/%E6%97%A5%E6%9C%AC%E8%AA%9E-0f4c81?style=for-the-badge"></p>
 
-# lean-quantum
+# Lean-Quantum: 量子情報理論のAI援用 Lean 形式化<br><sub>Löwner と Hiai–Petz の定理から一般化量子Steinの補題へ</sub>
 
-量子情報理論と量子計算の Lean による形式化です．
+証明支援系 Lean で書いた量子情報理論のライブラリです．Löwner の定理と Hiai–&#8288;Petz の定理を形式化し，それらからサンドイッチ Rényi ダイバージェンス，Petz 型 Rényi ダイバージェンス，Umegaki 相対エントロピーの 3 つのデータ処理不等式（DPI．完全正・トレース保存（TPCP）写像 $\Phi$ について $D(\Phi\rho\Vert\Phi\sigma)\leq D(\rho\Vert\sigma)$ ）を証明しました．DPI には Lieb–&#8288;Ando トレース不等式による証明もあり，強劣加法性（SSA）と一般化量子Steinの補題はどちらの証明からでも導かれます．
 
-> **IBIS 2026 でポスターをご覧になった方へ**：ポスターで紹介した形式化（Löwner と Hiai–Petz の定理から一般化量子Steinの補題へ）のコードは，ブランチ [`paper2`](https://github.com/Hayata-Yamasaki-Group/lean-quantum/tree/paper2) にあります．
+このリポジトリは，投稿準備中の Lean-Quantum の第 2 の論文（Paper 2）で報告する形式化のコードです．
 
 <!-- BEGIN BADGES -->
 <p align="center">
 <a href="https://lean-lang.org/"><img alt="Lean 4.29.0--rc6" src="https://img.shields.io/badge/Lean-4.29.0--rc6-0f4c81.svg?style=flat-square"></a>
-<a href="https://arxiv.org/abs/2607.05492"><img alt="arXiv 2607.05492" src="https://img.shields.io/badge/arXiv-2607.05492-b31b1b.svg?style=flat-square"></a>
 <a href="LICENSE"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-blue.svg?style=flat-square"></a>
 </p>
 <!-- END BADGES -->
 
-## 更新情報
+著者：笠浦一海，塚本慧，森健人，水野理沙，生田目敬大，折池雄太，谷口雅弥，園田翔，山崎隼汰．
 
-- **2026 年 10 月**：Lean-Quantum の第 2 の論文（Paper 2，投稿準備中）で報告する形式化を，ブランチ [`paper2`](https://github.com/Hayata-Yamasaki-Group/lean-quantum/tree/paper2) で公開しました．
-- **2026 年 10 月**：arXiv:2607.05492 の第 2 版（投稿予定）に合わせてコードを更新しました．標準の数学ライブラリである Mathlib の考え方（[Mathlib's values](https://leanprover-community.github.io/contribute/values.html)）を取り入れ，たとえば大きなファイルを，主題ごとの小さなファイルに分け，Lean の宣言（定義や定理）の名前を，一部を除いて [Mathlib の命名規則](https://leanprover-community.github.io/contribute/naming.html)にそろえました．また，いくつかの定義と定理を述べ直しました．[結果](#結果)に挙げた 34 個の定理は，Comparator で独立に検査できるようにしました．arXiv v1 に対応するコードは，コミット [`bf1c4f6`](https://github.com/Hayata-Yamasaki-Group/lean-quantum/tree/bf1c4f6aaec84948f1a1c76c0728432813404a0f) で引き続き参照できます．
+DPI は複数の証明経路（同じ定理に至る証明の道筋）で証明しています．どの経路を使っても，SSA と GQSL のステートメントとその証明コードは変わりません．下のアニメーションは，最初に証明経路の全体を示し，続いて SSA と GQSL の証明で使われる証明の組合せ 10 通りを 1 つずつ示します．
+
+<p align="center"><img src="images/route-overview-animated-ja.png" width="720" alt="証明経路の全体図と，SSA と GQSL の証明で使われる組合せ 10 通りを順に示すアニメーション"></p>
 
 ## 目次
 
-- [対象範囲](#対象範囲)
-- [線形作用素と有界線形作用素](#線形作用素と有界線形作用素)
+- [背景と形式化の範囲](#背景と形式化の範囲)
 - [実行方法](#実行方法)
-- [独立な証明の検査](#独立な証明の検査)
-- [結果](#結果)
-- [ポスター発表（AQIS 2026）](#ポスター発表aqis-2026)
+- [このコードで形式化した主要定理](#このコードで形式化した主要定理)
+- [Comparator による検査](#comparator-による検査)
+- [先行研究](#先行研究)
+- [ポスター発表（IBIS 2026）](#ポスター発表ibis-2026)
 - [引用方法](#引用方法)
 
-## 対象範囲
+## 背景と形式化の範囲
 
-このライブラリは現在，有限次元の量子情報理論を中心に（一部の作用素不等式は無限次元も含めて），その基礎を，Lean の証明検査器（kernel．Lean の中で証明を検査する小さな中核部分）が検査した形で提供しています．主な内容は次のとおりです：
+一般化量子Steinの補題（generalized quantum Stein's lemma，GQSL）は量子資源理論の結果で，量子状態の多数のコピーを自由状態（コストなしで用意できるとみなす状態）から見分ける検定の，最適なエラー指数を与えます． <a id="対象範囲"></a>
 
-- 量子系，量子状態，完全正・トレース保存（CPTP）写像
-- テンソル積の空間の上の部分トレース，Choi 作用素，Kraus 表現，Stinespring 表現
-- 作用素単調性と作用素凸性，Löwner–Heinz の定理，Jensen の作用素不等式，一般化されたパースペクティブ，作用素幾何平均，Hilbert–Schmidt 作用素空間，Lieb–Ando トレース不等式
-- サンドイッチ Rényi 相対エントロピーとそのデータ処理不等式（DPI），あわせてその非負性と，Umegaki 相対エントロピーおよび最大相対エントロピーへの極限
-- von Neumann エントロピー，Umegaki 相対エントロピーの DPI，強劣加法性（SSA）
-- 補助的な結果として，連続関数計算の補題（テンソル積の冪，冪の指数による微分など），トレースの Young の不等式，ユニタリ群上の Haar 測度による平均
+この補題は [Brandão–&#8288;Plenio（2010）](https://doi.org/10.1007/s00220-010-1005-z)が定式化して証明を与えましたが，その証明にあった欠陥は 10 年以上見逃され（[Berta ほか 2023](https://doi.org/10.22331/q-2023-09-07-1103)），その後，正しい証明が与えられました（[Hayashi–&#8288;Yamasaki 2025](https://arxiv.org/abs/2408.02722)，[Lami 2025](https://doi.org/10.1109/TIT.2025.3543610)）．このリポジトリでは，Hayashi–&#8288;Yamasaki の証明に沿って GQSL を形式化しました．同じ証明に沿った Lean の形式化は先にもあり，違いは[先行研究](#先行研究)で述べます．
 
-[`Quantum.lean`](Quantum.lean) は，[`Quantum/`](Quantum/) フォルダにあるすべてのモジュール（Lean のファイル）を読み込みます．`import Quantum` と書けば，このライブラリのすべての公開の宣言を使えます．
+ここで形式化とは，定義・定理・証明を Lean などの証明支援系のコードとして書き，証明の各ステップを，その証明検査器（kernel）に検査させることです．検査を通った定理は，証明の誤りを心配せずに，定義や定理の内容を確かめるだけで次の証明の部品として使えます．AI が書いた証明も同じように検査できるので，こうした形式化ライブラリは，AI が証明を生成できる時代の量子情報理論の基盤になります．
 
-## 線形作用素と有界線形作用素
+このリポジトリで形式化した主な結果は，次の 2 つの式です．仮定と記号の詳細は[主要定理](#このコードで形式化した主要定理)の節にあります．
 
-有限次元の Hilbert 空間では線形作用素はすべて有界なので，線形作用素の空間 $\mathcal L(\mathcal H)$ と有界線形作用素の空間 $\mathcal B(\mathcal H)$ は同一視できます．ただし Lean では，両者は別の型（`ℋ →ₗ[ℂ] ℋ` と `ℋ →L[ℂ] ℋ`）です．Mathlib は $\mathcal B(\mathcal H)$ を C*-環として扱い，連続関数計算 `cfc`（作用素の冪や対数を定義するのに使う）やユニタリ群上の Haar 測度はその上で使えます．このリポジトリは $\mathcal L(\mathcal H)$ にも $\mathcal B(\mathcal H)$ から写した C*-環の構造を入れ，証明では必要なところで作用素を $\mathcal B(\mathcal H)$ の型に移して使います（Hilbert–Schmidt 内積も $\mathcal B(\mathcal H)$ の型の上に作りました）．`cfc` は，定義上，前提を満たさない元（実関数では自己共役でない元）には値 $0$ を返します．このため，[定理で使う定義](#定理で使う定義)の表には，意図した入力の外での値も書きました．主な有限次元の定理（完全正値性，Lieb–Ando，エントロピーと DPI など）は $\mathcal L(\mathcal H)$ の型で，作用素の冪の定理は一般の C*-環で，Jensen の作用素不等式と一般化されたパースペクティブの定理は，無限次元も含む Hilbert 空間の $\mathcal B(\mathcal H)$ の型で述べています．
+### 一般化量子Steinの補題
+
+$$\Large\displaystyle\lim_{n\to\infty}\frac{1}{n}D_{\min}^{\varepsilon}(\rho^{\otimes n}\Vert F_n)=D^{\mathrm{reg}}(\rho\Vert F)\qquad(0<\varepsilon<1)$$
+
+ここで $\rho$ は状態， $F_n$ は $n$ コピーの自由状態の集合， $D_{\min}^{\varepsilon}$ は仮説検定相対エントロピー， $D^{\mathrm{reg}}$ は正則化相対エントロピーです．左辺は，第 1 種の誤りを $\varepsilon$ 以下に抑えたときの第 2 種の誤りの最適な指数で，各自由状態に別々に検定する Gour の形です．集合 $F_n$ 全体に 1 つの検定をする Hayashi–&#8288;Yamasaki の形との一致は [6. 一般化量子Steinの補題](#6-一般化量子steinの補題)で示します．
+
+### von Neumann エントロピーの強劣加法性
+
+$$\Large\displaystyle S(\rho_{ABC})+S(\rho_B)\leq S(\rho_{AB})+S(\rho_{BC})$$
+
+ここで $\rho_{ABC}$ は 3 つの系の状態， $S$ は von Neumann エントロピーです．
+
+サンドイッチ Rényi ダイバージェンス（ $\alpha>1$ ），Petz 型 Rényi ダイバージェンス（ $0\lt p\lt 1$ ），Umegaki 相対エントロピーの DPI を，それぞれサンドイッチ DPI，Petz DPI，Umegaki DPI とよびます．形式化の要点は次のとおりです．
+
+- [前報](#引用方法)（[Kasaura ほか 2026](https://arxiv.org/abs/2607.05492)）で形式化済みのもの：共通の道具，Lieb–&#8288;Ando トレース不等式を経るサンドイッチ DPI，その極限の Umegaki DPI と SSA です．
+- このリポジトリで新たに形式化したもの：Löwner の定理，Hiai–&#8288;Petz の定理とその 2 つの証明（Hansen–&#8288;Pedersen の定理から，Löwner の定理から），Hansen–&#8288;Pedersen の定理，Hiai–&#8288;Petz の定理を経るサンドイッチ DPI と Petz DPI，Lieb–&#8288;Ando トレース不等式を経る Petz DPI，Petz DPI からも導く SSA，DPI から導く GQSL です．
+- 定義と空間：量子状態と TPCP 写像（量子情報路）は有限次元で，基底によらない線形空間と線形作用素で定義します．DPI は半正定値作用素について，Hiai–&#8288;Petz の定理は行列について述べます．Löwner の定理の 4 条件の 1 つは任意の C*-環で，Hansen–&#8288;Pedersen の定理は任意の複素 Hilbert 空間上の作用素について述べます．
+- 証明の検査：すべての証明を，DPI と Hiai–&#8288;Petz の定理の 2 通りの証明の両方を含め，Lean の証明検査器で検査済みです．公理は Lean の標準の 3 つだけです（[Comparator による検査](#comparator-による検査)）．
+- AI を活用した部分：Lean の証明は AI エージェント（Anthropic の Claude Code と OpenAI の Codex．主に Claude の Opus・Fable と OpenAI の GPT の各モデル）が書き，対象の選定と，定理の主張と証明の採否は人が決めました．正しさは AI ではなく Lean の証明検査器が確認します．
 
 ## 実行方法
 
-手元でコンパイルして検査する手順です（README を読むだけなら不要です）．Lean（elan）が入っていなければ，先に [`elan` で Lean をインストールします](https://lean-lang.org/install/)．
+手元でコンパイルして検査する手順です（README を読むだけなら不要です）．
 
 ```bash
-git clone https://github.com/Hayata-Yamasaki-Group/lean-quantum.git
+git clone -b paper2 https://github.com/Hayata-Yamasaki-Group/lean-quantum.git
 cd lean-quantum
 lake exe cache get   # Mathlib のビルド済みファイルを取る
 lake build           # すべての証明を Lean の証明検査器で検査する
 ```
 
-- Lean のバージョンと依存関係は [lean-toolchain](lean-toolchain) と [lake-manifest.json](lake-manifest.json) で固定され，数学ライブラリとして依存するのは Mathlib だけです（Comparator は検証のための道具です）．
+- Lean（elan）が入っていなければ，先に [`elan` で Lean をインストールします](https://lean-lang.org/install/)．Lean のバージョンと依存関係は [lean-toolchain](lean-toolchain) と [lake-manifest.json](lake-manifest.json) で固定され，直接依存するのは Mathlib だけです．
 - `lake update` は実行しないでください（固定した依存関係のバージョンが変わります）．
-- `lake build` は `sorry` があっても警告を出すだけで成功します．ライブラリと解答のファイルに `sorry` はありません（ステートメントだけのファイルには，証明を省いた印として意図的に置いています）．各定理が使う公理は，`#print axioms` に定理の名前を付けて確かめられます（`sorry` を使っていれば `sorryAx` が表示されます）．
+- Lean は `sorry` を通常は警告として扱います．`lake build` の成功だけでは，`sorry` がないとは言えません．ライブラリの証明に `sorry` はありません（`sorry` があるのは，ステートメントのファイルと，公理の試験用に意図的に不正にした 2 入力 [Paper2SolutionAxiom.lean](ComparatorChallenges/Paper2SolutionAxiom.lean) と [GslSolutionAxiom.lean](ComparatorChallenges/GslSolutionAxiom.lean) だけです）．各定理が使う公理は，`#print axioms` に定理の名前を付けて確かめられます（`sorry` を使っていれば `sorryAx` が表示されます）．
 
-## 独立な証明の検査
+## このコードで形式化した主要定理
 
-**保証**：[Comparator](https://github.com/leanprover/comparator) は，コードベース全体を信用しなくても，ステートメントだけのファイル [`Paper1.lean`](ComparatorChallenges/Paper1.lean)（Comparator の用語では challenge）とそれが読み込むモジュール，検査の設定（[`Paper1.json`](ComparatorChallenges/Paper1.json)），およびビルドの設定（lakefile）を信用すれば，検査が成功したとき，`Paper1.lean` に書いた 34 個の定理（[結果](#結果)に挙げたもの）が証明されていると言えるようにする検査です（その他の前提は [Comparator の README](https://github.com/leanprover/comparator/blob/a4f696825c583ed8a5b4060d9a0faa5b882d365b/README.md) をご覧ください）．
+作用素の不等式から SSA と GQSL までの主要定理を，次の節の表で示します．
 
-**検査の手順**：証明を持つ解答のファイル [`Paper1Solution.lean`](ComparatorChallenges/Paper1Solution.lean)（Comparator の用語では solution）を，書き込める場所を制限したサンドボックス（landrun）の中でビルドし，各定理が `Paper1.lean` と同じステートメント（ステートメントに使う定義も含めて）であること，Lean の標準の 3 公理（`propext`，`Classical.choice`，`Quot.sound`）だけを使っていること（`sorry` を使う証明はここで不合格になります）を確かめ，証明を Lean の証明検査器（kernel）と，それとは独立に作られた証明検査器 nanoda の両方で検査し直します．
+1. [Löwner の定理](#1-löwner-の定理)（3 件）
+2. [Hiai–&#8288;Petz の定理](#2-hiaipetz-の定理)（2 件）
+3. [サンドイッチ DPI と Petz DPI](#3-サンドイッチ-dpi-と-petz-dpi)（4〜6 の証明で使う部品の DPI）
+4. [Umegaki DPI](#4-umegaki-dpi)（2 件）
+5. [強劣加法性（SSA）](#5-強劣加法性ssa)（1 件）
+6. [一般化量子Steinの補題](#6-一般化量子steinの補題)（3 件）
 
-**信用するもの**：読み込むモジュールについて信用するのは，そこで定義された語の意味（[定理で使う定義](#定理で使う定義)の表で確かめます）と，ビルドのときに検査の対象や検査の処理を書き換えるプログラムを含まないこと（Lean のファイルはビルド中にプログラムを実行できます）だけで十分です．34 個の定理が依存する証明は，それらのモジュールの中にあっても Comparator が検査し直すからです．
+表には「文献」「主張」「Lean」の 3 つの列があります．「文献」列は定理の出どころで，原典の文献の定理番号です（前報の箇所を指す行もあります）．「主張」列は，「文献」列の定理を述べ直したものです．Lean で述べるために仮定や範囲を変えたところは，「主張」列と各節の本文に書いています．「Lean」列は，その定理を Lean で述べた宣言の名前です．名前をクリックすると，Comparator で照合したステートメントだけのファイル [Paper2.lean](ComparatorChallenges/Paper2.lean)（証明は `sorry`）の，その宣言の行が開きます．Umegaki DPI の表は，文献の定理番号を挙げない定理の表なので「文献」列がありません．主張で使う定義は，[この節の最後](#主張で使う定義)にまとめています．
 
-**実行の結果**：この版は，Landlock が有効な Linux の上で，解答のファイルを隔離した環境でビルドして Comparator を実行し，34 個の定理すべてが Lean の証明検査器と nanoda の両方で受理されました．
+### 1. Löwner の定理
 
-**確かめられないこと**：Lean の定理のステートメント（暗黙の引数や型クラスのインスタンスを含む）とそこで使う定義が，論文で意図された通りの主張を表しているかは，Comparator では確かめられないので，ユーザーが読んで確かめる必要があります．そのために，以下では[定理で使う定義](#定理で使う定義)の一覧を表にまとめています．準備と実行の手順は [ComparatorChallenges/README.md](ComparatorChallenges/README.md) にあります（隔離して実行するには，Landlock が有効な Linux が要ります）．
+Löwner の定理は作用素単調関数の特徴付けです．Hiai–&#8288;Petz の定理の 2 つの証明のうち，1 つはこの定理を使います． <a id="h2-löwner-の定理--作用素単調関数の特徴付け"></a>
 
-## 結果
+定理の内容は，実関数 $f$ の $(-1,1)$ 上の値についての次の 4 条件の同値です：(a) Löwner 行列が半正定値，(b) Pick 関数への解析接続をもつ，(c) $[-1,1]$ 上の有限測度 $\nu$ による積分表示をもつ，(d) $f-f(0)$ が作用素単調．下の表の 3 行目（Simon の定理 3.12）は (c) $\Rightarrow$ (d) で，次の積分表示をもつ $f$ について $f-f(0)$ が作用素単調であることを述べます：
 
-34 個の定理（ライブラリのすべての定理ではなく，Comparator の検査の対象として選んだもの）を，次の 1〜6 節の表で示します．
+$$f(x)=f(0)+\int_{[-1,1]}\frac{x}{1+tx}\thinspace d\nu(t)\qquad(-1\lt x\lt 1).$$
 
-1. [完全正値性とチャネルの表現](#1-完全正値性とチャネルの表現)（6 件）
-2. [作用素単調・作用素凸な冪関数](#2-作用素単調作用素凸な冪関数)（5 件）
-3. [Jensen の作用素不等式と一般化されたパースペクティブ](#3-jensen-の作用素不等式と一般化されたパースペクティブ)（6 件）
-4. [Lieb–Ando トレース不等式](#4-liebando-トレース不等式)（3 件）
-5. [サンドイッチ Rényi 相対エントロピーのデータ処理不等式とその帰結](#5-サンドイッチ-rényi-相対エントロピーのデータ処理不等式とその帰結)（9 件）
-6. [診断の結果](#6-診断の結果)（5 件）
-- [定理で使う定義](#定理で使う定義)
+(d) の作用素単調性は，単位元をもつとは限らないすべての C\*-環で考えます．
 
-以下の 1〜6 節の表は，次の 3 つの列からなります．
-
-- **論文の箇所**
-  - 1〜5 節では，我々の論文（[arXiv:2607.05492](https://arxiv.org/abs/2607.05492)）がその定理に言及している式の番号か地の文へのリンク（論文に掲載した Lean のコードではない）
-  - 6 節では，作用素凸性などの述語を論文が導入する節へのリンク
-  - 地の文は，各表の前に最初と最後の語を「…」でつないで引用
-  - 第 2 版の公開までは arXiv v1 の節・式の番号・文で示し，リンクも arXiv v1 を指す（公開後に差し替える予定）
-- **主張**
-  - 1〜5 節では，論文の第 2 版（投稿予定）が取り上げた数学の定理（その多くは原典があり，証明も含めて形式化の元になっている）
-  - Lean で述べるために原典や論文から仮定や範囲を変えたところは，各表のこの列と各節の本文に書く
-- **Lean の宣言**
-  - その定理を Lean で形式化したもの
-  - リンクはステートメントだけのファイル [`Paper1.lean`](ComparatorChallenges/Paper1.lean) の宣言を開く
-  - 証明は [`Paper1Solution.lean`](ComparatorChallenges/Paper1Solution.lean) の同じ名前の定理からたどれる
-
-ユーザーは，「主張」と「Lean の宣言」のステートメントを見比べ，そのステートメントがこのリポジトリの定義を使っている場合は[定理で使う定義](#定理で使う定義)の表もあわせて見ます．ユーザーが確かめるのは，ステートメント（暗黙の引数や型クラスのインスタンスを含む）が意図どおりの形式化になっているかどうかで，それが証明されていることは Comparator が確かめる，という分担です（Comparator を信用するための前提は[独立な証明の検査](#独立な証明の検査)にあります）．
-
-34 個の定理のうち 29 個は，論文の 1.5 節と 2–4 節で述べた定理のいくつかを形式化したもので，一つの定理を Lean では複数の定理に分けたものもあります．残りの 5 個は，我々が作用素凸性・作用素凹性を自己共役な元に限って定義した根拠を示すもので（[6. 診断の結果](#6-診断の結果)），論文の定理ではありません．各節では，初めにその節の定理の一つを例として掲げ，その節に共通する仮定を述べたあと，表にその節の定理を挙げます．以下では，作用素（2 節では C*-環の元）が半正定値であることを PSD，半正定値かつ可逆であることを PD と書きます．
-
-### 1. 完全正値性とチャネルの表現
-
-CP は Mathlib の意味の完全正値性である（[定理で使う定義](#定理で使う定義)の `IsCompletelyPositive`）．入力の空間 $\mathcal H_1$ の基底 $b=(b_i)$ を一つ選び（正規直交でなくてもよい）， $\mathrm{vec}_b(I)=\sum_ib_i\otimes b_i$ とおくと，Choi 作用素 $C_\Phi$ による特徴付け（Choi の定理）は次のとおりである：
-
-$$\mathrm{CP}(\Phi) \iff C_\Phi\ge0,\qquad C_\Phi:=(\Phi\otimes\mathrm{id})[\mathrm{vec}_b(I)\mathrm{vec}_b(I)^\dagger].$$
-
-この節の定理は，有限次元の複素 Hilbert 空間 $\mathcal H_1,\mathcal H_2$ の作用素の空間の間の複素線形写像 $\Phi:L(\mathcal H_1)\to L(\mathcal H_2)$ （超作用素とも呼ぶ）について述べる．論文は，次の 6 つの同値を 2.2 節の 1 つの段落でまとめて述べている．
-
-「論文の箇所」列の文：
-
-- [2.2 節](https://arxiv.org/html/2607.05492v1#S2.SS2.p13)：“The main equivalence theorem relates … rank Stinespring representations.”
-
-| 論文の箇所 | 主張 | Lean の宣言 |
+| 文献 | 主張 | Lean |
 |---|---|---|
-| [2.2 節](https://arxiv.org/html/2607.05492v1#S2.SS2.p13) | $\mathrm{CP}(\Phi)$ は， $\Phi\otimes\mathrm{id}_{L(\mathcal H_1)}$ が正であることと同値である． | [`cp_iff_tensor`](ComparatorChallenges/Paper1.lean#L62) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S2.SS2.p13) | $\mathrm{CP}(\Phi)$ は，Choi 作用素が $C_\Phi\ge0$ を満たすことと同値である． | [`cp_iff_choi`](ComparatorChallenges/Paper1.lean#L71) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S2.SS2.p13) | $\mathrm{CP}(\Phi)$ は，有限の $J$ について $\Phi(X)=\sum_{a\in J}A_aXA_a^\dagger$ と書けることと同値である． | [`cp_iff_kraus`](ComparatorChallenges/Paper1.lean#L83) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S2.SS2.p13) | $\mathrm{CP}(\Phi)$ は， $\lvert J\rvert=\mathrm{rank}C_\Phi$ を満たす Kraus 表現をもつことと同値である． | [`cp_iff_rank_kraus`](ComparatorChallenges/Paper1.lean#L91) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S2.SS2.p13) | $\mathrm{CP}(\Phi)$ は，有限次元の $E$ について $\Phi(X)=\mathrm{Tr}_E[AXA^\dagger]$ と書けることと同値である． | [`cp_iff_stinespring`](ComparatorChallenges/Paper1.lean#L103) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S2.SS2.p13) | $\mathrm{CP}(\Phi)$ は， $\dim E=\mathrm{rank}C_\Phi$ を満たす Stinespring 表現をもつことと同値である． | [`cp_iff_rank_stinespring`](ComparatorChallenges/Paper1.lean#L119) |
+| [Simon&nbsp;(2019)](https://doi.org/10.1007/978-3-030-22422-6)，定&#8288;理&nbsp;1.3 と&nbsp;5.1 を 4 条件の形に整理 | (a) $\Leftrightarrow$ (b) $\Leftrightarrow$ (c) $\Leftrightarrow$ (d)． | [`loewner…⁠FourConditions`](ComparatorChallenges/Paper2.lean#L87 "loewnerUnitIntervalFourConditions") |
+| [Simon&nbsp;(2019)](https://doi.org/10.1007/978-3-030-22422-6)，定&#8288;理&nbsp;3.8 | (b) $\Leftrightarrow$ (c)． | [`…⁠PickExtension_iff_integralRep`](ComparatorChallenges/Paper2.lean#L93 "unitIntervalPickExtension_iff_integralRep") |
+| [Simon&nbsp;(2019)](https://doi.org/10.1007/978-3-030-22422-6)，定&#8288;理&nbsp;3.12 | (c) $\Rightarrow$ (d)． | [`…⁠_of_integralRep`](ComparatorChallenges/Paper2.lean#L98 "operatorMonotoneOnUnitInterval_of_integralRep") |
 
-### 2. 作用素単調・作用素凸な冪関数
+---
 
-順序付き複素 C*-環の元 $A,B$ と実数 $p$ について，Löwner–Heinz の不等式は次のとおりである：
+### 2. Hiai–Petz の定理
 
-$$0\le p\le1, 0\le B\le A \implies B^p\le A^p.$$
+Hiai–&#8288;Petz の定理は，作用素単調性と擬エントロピーの同時凹性を結ぶ定理です． <a id="h-hiaipetz-の定理--作用素単調性と擬エントロピーの同時凹性"></a>
 
-この節の定理は，順序付き複素 C*-環の元について述べ，実数冪は連続関数計算で定める（非負の冪は PSD の元，負の冪は PD の元に対して考える）．
+定理の内容は， $(0,\infty)$ 上で連続な $f>0$ について，次の (i)〜(iv) が同値であることです．正定値行列 $A,B$ と行列 $X$ について次の記号を使います（ $S_f^X$ が擬エントロピーです）：
 
-「論文の箇所」列の文：
+$$L_AX:=AX,\quad R_BX:=XB,\quad J_f(A,B):=f(L_AR_{B^{-1}})\thinspace R_B,\quad S_f^X(A,B):=\mathrm{Re}\thinspace\mathrm{Tr}\bigl(X^{\ast}J_f(A,B)X\bigr).$$
 
-- [3.1 節（正⁠の⁠冪）](https://arxiv.org/html/2607.05492v1#S3.SS1.p8)：“These express the standard facts that … for $1\le p\le2$.”
-- [3.1 節（負⁠の⁠冪）](https://arxiv.org/html/2607.05492v1#S3.SS1.p9)：“The current Core interface also includes negative-power results, … trace inequalities:”
+(i) 作用素単調性：すべてのサイズのエルミート行列 $A,B$ について
 
-| 論文の箇所 | 主張 | Lean の宣言 |
+$$0\lt A\leq B\space\Longrightarrow\space f(A)\leq f(B).$$
+
+(ii)・(iii) 2 つの作用素不等式： $\Phi^{\ast}J_f(\Phi A,\Phi B)^{-1}\Phi\leq J_f(A,B)^{-1}$ が (ii)， $\Phi J_f(A,B)\Phi^{\ast}\leq J_f(\Phi A,\Phi B)$ が (iii) です．これらは，随伴が Schwarz 写像である正・トレース保存の線形写像 $\Phi$ （TPCP 写像を含む）について要求します． $\Phi^{\ast}$ は Hilbert–&#8288;Schmidt 内積についての随伴で， $\leq$ は行列の空間上の作用素の順序です．
+
+(iv) 擬エントロピーの同時凹性： $0\leq t\leq1$ ，正定値行列 $A_1,A_2,B_1,B_2$ ，行列 $X$ について
+
+$$tS_f^X(A_1,B_1)+(1-t)S_f^X(A_2,B_2)\leq S_f^X\bigl(tA_1+(1-t)A_2,\space tB_1+(1-t)B_2\bigr).$$
+
+下の表の 2 つの定理は，Hansen–&#8288;Pedersen の定理を経る証明（既定で使う証明）と，Löwner の定理を経る証明の 2 通りで示しています．
+
+| 文献 | 主張 | Lean |
 |---|---|---|
-| [3.1 節（正⁠の⁠冪）](https://arxiv.org/html/2607.05492v1#S3.SS1.p8) | $0\le p\le1$ について， $x\mapsto x^p$ は $[0,\infty)$ 上で作用素単調である． | [`power_Icc_zero_one_operatorMonotoneOn_Ici`](ComparatorChallenges/Paper1.lean#L138) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.SS1.p8) | $0\le p\le1$ について， $x\mapsto x^p$ は $[0,\infty)$ 上で作用素凹である． | [`operatorConcaveOn_rpow_Ici`](ComparatorChallenges/Paper1.lean#L146) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.SS1.p8) | $1\le p\le2$ について， $x\mapsto x^p$ は $[0,\infty)$ 上で作用素凸である． | [`operatorConvexOn_rpow_Ici`](ComparatorChallenges/Paper1.lean#L155) |
-| [3.1 節（負⁠の⁠冪）](https://arxiv.org/html/2607.05492v1#S3.SS1.p9) | $-1\le p\le0$ について， $x\mapsto-x^p$ は $(0,\infty)$ 上で作用素単調である． | [`power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi`](ComparatorChallenges/Paper1.lean#L164) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.SS1.p9) | $-1\le p\le0$ について， $x\mapsto-x^p$ は $(0,\infty)$ 上で作用素凹である． | [`operatorConcaveOn_neg_rpow_Ioi`](ComparatorChallenges/Paper1.lean#L173) |
+| [Hiai&nbsp;(2025)](https://saiensu.co.jp/search/?isbn=978-4-7819-1637-8&y=2025)，定&#8288;理&nbsp;6.2 | (i)〜(iv) は同値（(ii)・(iii) は $\Phi(I)>0$ の写像について）． | [`strictDPIEquivalences`](ComparatorChallenges/Paper2.lean#L57) |
+| [Hiai&nbsp;(2025)](https://saiensu.co.jp/search/?isbn=978-4-7819-1637-8&y=2025)，定&#8288;理&nbsp;6.2（出&#8288;力&#8288;サ&#8288;ポ&#8288;ー&#8288;ト&#8288;形） | 出力サポート形の (i)〜(iv) は同値（(ii)・(iii) は写像を出力サポートへ圧縮し， $\Phi(I)>0$ を仮&#8288;定&#8288;し&#8288;な&#8288;い）． | [`outputSupportDPIEquivalences`](ComparatorChallenges/Paper2.lean#L60) |
 
-### 3. Jensen の作用素不等式と一般化されたパースペクティブ
+---
 
-有限個の作用素についての Jensen の作用素不等式は次のとおりである：複素 Hilbert 空間 $\mathcal H$ の上の有界作用素 $A_j,X_j\in\mathcal B(\mathcal H)$ （ $j$ は有限個の添字）で， $A_j$ が PSD， $\sum_jX_j^\dagger X_j\le I$ を満たすものと， $[0,\infty)$ 上で一様に作用素凸（すべての複素 Hilbert 空間で作用素凸）かつ連続で $f(0)\le0$ を満たす実関数 $f$ について，
+### 3. サンドイッチ DPI と Petz DPI
 
-$$f[\sum_jX_j^\dagger A_jX_j]\le\sum_jX_j^\dagger f[A_j]X_j.$$
+この節で述べるサンドイッチ Rényi ダイバージェンスと Petz 型 Rényi ダイバージェンスの DPI は，下の Umegaki DPI・SSA・GQSL の証明で使う部品で，その主張は[定義の表](#主張で使う定義)の `RenyiDPI.SandwichedSide`・`RenyiDPI.PetzSide` にまとめています．どちらも，Lieb–&#8288;Ando トレース不等式を経る証明と Hiai–&#8288;Petz の定理を経る証明の 2 通りで示しています．[Comparator](#comparator-による検査) で照合する 19 件の定理には含めていませんが，証明はライブラリを build するときに Lean の証明検査器が検査します． <a id="サンドイッチ-dpi-と-petz-dpi--rényi-ダイバージェンスのデータ処理不等式"></a>
 
-この節の定理は，有限次元を仮定しない複素 Hilbert 空間で述べる．
+$\alpha>1$ のサンドイッチ Rényi ダイバージェンスと $0\lt p\lt 1$ の Petz 型 Rényi ダイバージェンスは，自然対数で次のとおりです：
 
-「論文の箇所」列の文：
+$$\tilde D_\alpha(\rho\Vert\sigma):=\frac{1}{\alpha-1}\log\frac{\mathrm{Tr}\bigl[(\sigma^{\frac{1-\alpha}{2\alpha}}\rho\sigma^{\frac{1-\alpha}{2\alpha}})^{\alpha}\bigr]}{\mathrm{Tr}(\rho)},\qquad D_p(\rho\Vert\sigma):=\frac{1}{p-1}\log\frac{\mathrm{Tr}(\rho^{p}\sigma^{1-p})}{\mathrm{Tr}(\rho)}.$$
 
-- [3.4 節](https://arxiv.org/html/2607.05492v1#S3.SS4.p2)：“The main theorem packages the implication … two-operator Jensen form:”
-- [3.5 節（凸⁠性）](https://arxiv.org/html/2607.05492v1#S3.SS5.p5)：“Thus, if $f$ is operator convex … positive-definite domains.”
-- [3.5 節（凹⁠性）](https://arxiv.org/html/2607.05492v1#S3.SS5.p7)：“The corresponding concavity theorem is obtained … to $-f$:”
+その値は拡張実数で， $\rho=0$ なら 0，サポートによっては $+\infty$ です．規約は[サンドイッチ](Quantum/QuantumEntropy/SandwichedRenyiBase/NonNeg/Defs.lean#L42 "SandwichedRenyiRelativeEntropy.sandwichedRenyiDivNN")・[Petz](Quantum/QuantumEntropy/RenyiDPI/Defs.lean#L48 "RenyiDPI.petzDivNN") の定義にあります．2 通りの証明は同じ 3 つの主張を示します．その主張は，すべての TPCP 写像 $\Phi$ と $\rho,\sigma\geq0$ についての DPI，密度作用素のテンソル積での加法性，正定値の入力で Rényi パラメータ→1 の極限が Umegaki 相対エントロピーになること，の 3 つです．
 
-| 論文の箇所 | 主張 | Lean の宣言 |
+---
+
+### 4. Umegaki DPI
+
+この節の定理は，Umegaki 相対エントロピーのデータ処理不等式です． <a id="umegaki-dpi--umegaki-相対エントロピーのデータ処理不等式"></a>
+
+対象は，トレースで割った Umegaki 相対エントロピー $D(\rho\Vert\sigma):=\mathrm{Re}\thinspace\mathrm{Tr}(\rho(\log\rho-\log\sigma))/\mathrm{Re}\thinspace\mathrm{Tr}(\rho)$ （自然対数）の，TPCP 写像 $\Phi$ についての DPI です．下の表の 1 行目は， $\rho$ ， $\sigma$ ， $\Phi\rho$ ， $\Phi\sigma$ が正定値のときの，この $D$ のデータ処理不等式です：
+
+$$D(\Phi\rho\Vert\Phi\sigma)\leq D(\rho\Vert\sigma).$$
+
+2 つの定理は，どちらも古典的な結果です．1 行目は，既定ではサンドイッチ DPI の極限として示します（Petz DPI の極限としても得られます）．2 行目はそれを半正定値の入力へ拡張したもの（Umegaki DPI の拡張）です．
+
+| 主張 | Lean |
+|---|---|
+| $\rho$ ， $\sigma$ ， $\Phi\rho$ ， $\Phi\sigma$ が正定値ならば $D(\Phi\rho\Vert\Phi\sigma)\leq D(\rho\Vert\sigma)$ である． | [`monotoneOnPosDef`](ComparatorChallenges/Paper2.lean#L71) |
+| サポートの包含を仮定せずに，すべての $\rho,\sigma\geq0$ について拡張実数で $D(\Phi\rho\Vert\Phi\sigma)\leq D(\rho\Vert\sigma)$ ．包含がなければ $D=+\infty$ とする． | [`monotoneOnNonNeg`](ComparatorChallenges/Paper2.lean#L77) |
+
+---
+
+### 5. 強劣加法性（SSA）
+
+この節の定理は，von Neumann エントロピーの強劣加法性です． <a id="von-neumann-エントロピーの強劣加法性ssa"></a>
+
+下の表の定理は，3 つの系の密度作用素 $\rho_{ABC}$ についての次の不等式です：
+
+$$S(\rho_{ABC})+S(\rho_B)\leq S(\rho_{AB})+S(\rho_{BC}).$$
+
+ここで $\rho_{AB},\rho_{BC},\rho_B$ は $\rho_{ABC}$ の部分トレースでとった周辺状態で，系 $A,B,C$ は非零の有限次元複素 Hilbert 空間です．
+
+| 文献 | 主張 | Lean |
 |---|---|---|
-| [3.4 節](https://arxiv.org/html/2607.05492v1#S3.SS4.p2) | 列作用素が縮小作用素となる（ $X^\dagger X+Y^\dagger Y\le I$ ）とき，PSD の入力について 2 作用素の Jensen の不等式が成り立つ． | [`jensenColumn_of_opConvexIciAll`](ComparatorChallenges/Paper1.lean#L182) |
-| [3.5 節（凸⁠性）](https://arxiv.org/html/2607.05492v1#S3.SS5.p5) | PSD の $A$ と PD の $B$ について，一般化されたパースペクティブ $(f\Delta h)(A,B)$ は同時凸である． $f$ は $[0,\infty)$ 上で一様に作用素凸かつ連続で $f(0)\le0$ ， $h$ は $(0,\infty)$ 上で作用素凹かつ連続で正． | [`jointlyConvexOn_generalizedPerspective_psdSet_pdSet`](ComparatorChallenges/Paper1.lean#L191) |
-| [3.5 節（凹⁠性）](https://arxiv.org/html/2607.05492v1#S3.SS5.p7) | PSD の $A$ と PD の $B$ について，一般化されたパースペクティブ $(f\Delta h)(A,B)$ は同時凹である． $f$ は $[0,\infty)$ 上で一様に作用素凹かつ連続で $f(0)\ge0$ ， $h$ は凸性の行と同じ． | [`jointlyConcaveOn_generalizedPerspective_psdSet_pdSet`](ComparatorChallenges/Paper1.lean#L206) |
-| [3.4 節，式 (30)](https://arxiv.org/html/2607.05492v1#S3.E30) | $[0,\infty)$ 上で一様に作用素凸かつ連続で $f(0)\le0$ を満たす $f$ について，有限の Jensen の不等式が成り立つ． | [`jensenFinite_of_opConvexIciAll`](ComparatorChallenges/Paper1.lean#L413) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.E30) | 原点を含む開区間 $I$ 上で一様に作用素凸で $f(0)\le0$ を満たす $f$ と，スペクトルが $I$ に含まれる自己共役な $A_j$ （PSD でなくてよい）について，有限の Jensen の不等式が成り立つ． | [`jensenFinite_of_opConvexOnAll_of_isOpen`](ComparatorChallenges/Paper1.lean#L457) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.E30) | 原点を含む区間 $I$ 上で一様に作用素凸で， $f(0)\le0$ を満たし， $I$ に含まれる端点で $I$ 内から連続な $f$ と，スペクトルが $I$ に含まれる自己共役な $A_j$ について，有限の Jensen の不等式が成り立つ． | [`jensenFinite_of_opConvexOnAll_of_endpoints`](ComparatorChallenges/Paper1.lean#L473) |
+| [Lieb–&#8288;Ruskai&nbsp;(1973)](https://doi.org/10.1063/1.1666274)．[前&#8288;報の 1.5&nbsp;節，式&nbsp;(4)](https://arxiv.org/html/2607.05492v1#S1.E4) | $\mathrm{Tr}(\rho_{ABC})=1$ を満たすすべての $\rho_{ABC}\geq0$ について，上の不等式が&#8288;成&#8288;り&#8288;立&#8288;つ（周辺状態の正定値性は仮&#8288;定&#8288;し&#8288;な&#8288;い）． | [`strongSubadditivity_of_state`](ComparatorChallenges/Paper2.lean#L44) |
 
-### 4. Lieb–Ando トレース不等式
+---
 
-有限次元の複素 Hilbert 空間 $\mathcal H$ の作用素 $A,B,K\in L(\mathcal H)$ で $A,B$ が PD のものと， $0<s<1$ について，次の実数値の Lieb 汎関数は同時凹である（Lieb の凹性定⁠理）：
+### 6. 一般化量子Steinの補題
 
-$$(A,B)\mapsto\mathrm{Re}\mathrm{Tr}[A^sK^\dagger B^{1-s}K].$$
+この節の 3 つの定理は，GQSL を 2 つの形で述べた Gour の定理 11.4（自由状態ごとに別々の検定を使う形）と Hayashi–&#8288;Yamasaki の定理 1（自由状態の集合全体に 1 つの検定を使う形），それに Hayashi–&#8288;Yamasaki の定理 4（正則化相対エントロピーが 0 以上の実数で，後者の形のレートと Umegaki 相対エントロピーのレートがともにそれに収束すること）です．証明は Hayashi–&#8288;Yamasaki に従います． <a id="一般化量子steinの補題--証明は-hayashiyamasaki-に従う"></a>
 
-この節の定理は，有限次元の複素 Hilbert 空間で述べる．
+下の表の 1 行目（Gour の定理 11.4）は，[背景](#一般化量子steinの補題)と同じ次の式です：
 
-| 論文の箇所 | 主張 | Lean の宣言 |
+$$\lim_{n\to\infty}\frac{1}{n}D_{\min}^{\varepsilon}(\rho^{\otimes n}\Vert F_n)=D^{\mathrm{reg}}(\rho\Vert F)\qquad(0<\varepsilon<1).$$
+
+記号は背景のとおりで，左辺のレート（底 2）は $h_n^\varepsilon:=\frac{1}{n}\inf_{\sigma\in F_n}D_{\min}^{\varepsilon}(\rho^{\otimes n}\Vert\sigma)$ （Gour の形）で， $b_n^\varepsilon$ は $F_n$ 全体に 1 つの検定を使う Hayashi–&#8288;Yamasaki の形です．また $u_n:=\frac{1}{n}\inf_{\sigma\in F_n}D(\rho^{\otimes n}\Vert\sigma)$ ， $D^{\mathrm{reg}}(\rho\Vert F):=\inf_{n\geq1}u_n$ で， $D$ は [4. Umegaki DPI](#4-umegaki-dpi) の 2 行目の $D$ を底 2 にしたものです． $\rho$ は非零の有限次元複素 Hilbert 空間上の密度作用素です．
+
+| 文献 | 主張 | Lean |
 |---|---|---|
-| [3.7 節，式 (39)](https://arxiv.org/html/2607.05492v1#S3.E39) | Lieb 汎関数は $0<s<1$ について同時凹である． | [`jointlyConcaveOn_liebTraceMap_pdSetLM`](ComparatorChallenges/Paper1.lean#L223) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.E39) | Lieb 汎関数は $1\le s\le2$ について同時凸である． | [`jointlyConvexOn_liebTraceMap_pdSetLM`](ComparatorChallenges/Paper1.lean#L233) |
-| [3.7 節，式 (40)](https://arxiv.org/html/2607.05492v1#S3.E40) | $1\le q\le2$ ， $0\le r\le1$ ， $1\le q-r$ について， $\mathrm{Re}\mathrm{Tr}[A^qK^\dagger B^{-r}K]$ は同時凸である． | [`jointlyConvexOn_andoTraceMap_pdSetLM`](ComparatorChallenges/Paper1.lean#L243) |
+| [Gour&nbsp;(2024)，定&#8288;理&nbsp;11.4](https://arxiv.org/pdf/2402.05474v2#nameddest=theorem.11.4) | 密度作用素の条件と Gour の 4 条件の下で，すべての $\varepsilon\in(0,1)$ について $h_n^\varepsilon\to D^{\mathrm{reg}}(\rho\Vert F)$ ． | [`gsl_y54`](ComparatorChallenges/Paper2.lean#L20) |
+| [Hayashi–&#8288;Yamasaki&nbsp;(2025)，定&#8288;理&nbsp;1](https://arxiv.org/html/2408.02722v3#Thmtheorem1) | 密度作用素の条件と Hayashi–&#8288;Yamasaki の 3 条件の下で，すべての $\varepsilon\in(0,1)$ について $b_n^\varepsilon\to D^{\mathrm{reg}}(\rho\Vert F)$ ．置換不変性は仮定しない． | [`gsl_y53`](ComparatorChallenges/Paper2.lean#L26) |
+| [Hayashi–&#8288;Yamasaki&nbsp;(2025)，定&#8288;理&nbsp;4](https://arxiv.org/html/2408.02722v3#Thmtheorem4) | 密度作用素の条件と Hayashi–&#8288;Yamasaki の 3 条件の下で，すべての $\varepsilon\in(0,1)$ について $D^{\mathrm{reg}}(\rho\Vert F)=r$ ， $b_n^\varepsilon\to r$ ， $u_n\to r$ となる実数 $r\geq0$ がある． | [`gsl_y55`](ComparatorChallenges/Paper2.lean#L32) |
 
-### 5. サンドイッチ Rényi 相対エントロピーのデータ処理不等式とその帰結
+**3 つの定理の関係**
 
-定理 1 は，サンドイッチ Rényi 相対エントロピーのデータ処理不等式（DPI）である： $\mathcal H_1$ 上の密度作用素 $\rho,\sigma$ （ $\sigma$ は PD），CPTP 写像 $\Phi:L(\mathcal H_1)\to L(\mathcal H_2)$ ， $\alpha\in[1/2,1)\cup(1,\infty)$ について，
+密度作用素からなる空でない閉凸集合では，[ミニマックスの等式](Quantum/QuantumEntropy/GourResource/Minimax.lean#L221 "GourResource.gsl_y04")（Hayashi–&#8288;Yamasaki の補題 3）ですべての $n\geq1$ について $h_n^\varepsilon=b_n^\varepsilon$ となり，これで Gour の定理 11.4 を Hayashi–&#8288;Yamasaki の定理 1 から置換の条件を使わずに導きます（下の図）．
 
-$$D_\alpha(\Phi[\rho]\Vert\Phi[\sigma])\le D_\alpha(\rho\Vert\sigma).$$
+<p align="center"><img src="images/fig-gqsl-theorems-ja.png" width="720" alt="GQSL の定理の関係の図：Hayashi–Yamasaki の定理 1 は Hayashi–Yamasaki の 3 条件の下での h_n^ε の収束とミニマックスの等式から，Gour の定理 11.4 は定理 1 とミニマックスの等式から（Gour の 4 条件から 3 条件を取り出す），Hayashi–Yamasaki の定理 4 は定理 1，u_n の D^reg への収束（D^reg は有限の実数）と D^reg ≥ 0 から導かれる"></p>
 
-3 者の強劣加法性（SSA）の 2 行は， $\tau_C=I_C/\dim C$ として $D_\alpha(\rho_{BC}\Vert\rho_B\otimes\tau_C)\le D_\alpha(\rho_{ABC}\Vert\rho_{AB}\otimes\tau_C)$ を述べる．この節の定理は有限次元の複素 Hilbert 空間で述べる．DPI の写像はすべて CPTP とし，DPI と Rényi の SSA では上に示した $\alpha$ の範囲を使う．ダイバージェンスは実数値で，`NN` の付く版だけは PSD の入力に対する拡張実数値の版である（定理 1 は `NN` の版で述べる）．
+---
 
-「論文の箇所」列の文：
+### 主張で使う定義
 
-- [4.4 節](https://arxiv.org/html/2607.05492v1#S4.SS4.p3)：“The development also formalizes … DPI for positive semidefinite operators.”
-- [1.5 節](https://arxiv.org/html/2607.05492v1#S1.SS5.p1)：“In the limit $\alpha\to1$, the sandwiched Rényi … Umegaki relative entropy”
-
-| 論文の箇所 | 主張 | Lean の宣言 |
-|---|---|---|
-| [4.4 節](https://arxiv.org/html/2607.05492v1#Thmtheorem1) | 入力と出力が PD のとき，実数値の DPI が成り立つ（定理 1 の証明の核）． | [`sandwichedRenyiDiv_monotone`](ComparatorChallenges/Paper1.lean#L257) |
-| [4.4 節](https://arxiv.org/html/2607.05492v1#S4.SS4.p3) | 任意の PSD の入力について，拡張実数値の DPI が成り立つ． | [`sandwichedRenyiDivNN_monotone`](ComparatorChallenges/Paper1.lean#L272) |
-| [4.4 節，式 (65)，定⁠理 1](https://arxiv.org/html/2607.05492v1#S4.E65) | $\sigma$ が正定値である密度作用素の入力について，DPI が成り立つ（定理 1）． | [`sandwichedRenyiDivNN_monotone_of_isDensity`](ComparatorChallenges/Paper1.lean#L430) |
-| [1.5 節，式 (4)](https://arxiv.org/html/2607.05492v1#S1.E4) | 状態について $S(\rho_{ABC})+S(\rho_B)$ $\le S(\rho_{AB})+S(\rho_{BC})$ が成り立つ． | [`strongSubadditivity_of_state`](ComparatorChallenges/Paper1.lean#L287) |
-| [1.5 節](https://arxiv.org/html/2607.05492v1#S1.SS5.p1) | PD の入力について， $\alpha\to1^+$ のとき，サンドイッチ Rényi 相対エントロピーは，Umegaki 相対エントロピーを $\rho$ のトレースで割った値に収束する． | [`tendsto_sandwichedRenyiDiv_umegakiNorm_right`](ComparatorChallenges/Paper1.lean#L305) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S1.SS5.p1) | PD の入力について， $\alpha\to1$ ， $\alpha\ne1$ のとき，サンドイッチ Rényi 相対エントロピーは，Umegaki 相対エントロピーを $\rho$ のトレースで割った値に収束する． | [`tendsto_sandwichedRenyiDiv_umegakiNorm_of_pd`](ComparatorChallenges/Paper1.lean#L317) |
-| [1.5 節，式 (3)](https://arxiv.org/html/2607.05492v1#S1.E3) | 任意の PSD の入力について，拡張実数値の 3 者の SSA が成り立つ． | [`sandwichedRenyiDivNN_tripartiteSSA`](ComparatorChallenges/Paper1.lean#L328) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S1.E3) | $\rho_{AB}\otimes\tau_C$ が PD で，両辺の $\mathrm{Re}\,Q_\alpha$ と $\mathrm{Re}\,\mathrm{Tr}\rho$ が 0 でないとき，実数値の 3 者の SSA が成り立つ． | [`sandwichedRenyiDiv_tripartiteSSA`](ComparatorChallenges/Paper1.lean#L343) |
-| [1.5 節](https://arxiv.org/html/2607.05492v1#S1.SS5.p1) | $\rho\ne0$ かつ $\mathrm{supp}\rho\subseteq\mathrm{supp}\sigma$ を満たす PSD の入力について， $\alpha\to1$ ， $\alpha\ne1$ のとき，サンドイッチ Rényi 相対エントロピーは，Umegaki 相対エントロピーを $\rho$ のトレースで割った値に収束する． | [`tendsto_sandwichedRenyiDiv_umegakiNorm_of_supportLE`](ComparatorChallenges/Paper1.lean#L445) |
-
-### 6. 診断の結果
-
-この節の 5 個の定理は，我々が作用素凸性・作用素凹性を自己共役な元に限って定義した根拠を示すもので，論文が主張する定理ではない．[`OperatorConvex`](#def-operatorconvex) と [`OperatorConcave`](#def-operatorconcave) は，複素 C*-環の，自己共役でない元も含むすべての元の上で量化された述語で，[`OperatorConvexAll`](#def-operatorconvexall) と [`OperatorConcaveAll`](#def-operatorconcaveall) は，それを零でない完備な複素 Hilbert 空間のすべてで課す述語である．`cfc` は，定義上，自己共役でない元には値 $0$ を返すので，これらを満たすのは（C*-環が非自明なら）$f=0$ だけである：
-
-$$\mathrm{OperatorConvexAll}(f) \implies f=0.$$
-
-このため，これらの述語を定理の仮定に置くと，$f\ne0$ では仮定が成り立たず，定理は空虚に成り立つだけになる．そこで Jensen の作用素不等式と一般化されたパースペクティブの定理では，自己共役でスペクトルが区間 $s$ に含まれる元に限って量化する述語（`OperatorConvexOn` など）を使う．たとえば $s=[0,\infty)$ （PSD の元）に限った作用素凸性は $x\mapsto x^2$ を許す．以下の「論文の箇所」は，作用素凸性などの述語を論文が導入する 3.1 節を指す．
-
-| 論文の箇所 | 主張 | Lean の宣言 |
-|---|---|---|
-| [3.1 節](https://arxiv.org/html/2607.05492v1#S3.SS1) | `OperatorConvex` は，すべての実数 $x$ について $f(x)=0$ を強いる． | [`OperatorConvex.eq_zero_of_nontrivial`](ComparatorChallenges/Paper1.lean#L367) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.SS1) | `OperatorConcave` は，すべての実数 $x$ について $f(x)=0$ を強いる． | [`OperatorConcave.eq_zero_of_nontrivial`](ComparatorChallenges/Paper1.lean#L378) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.SS1) | `OperatorConvexAll` は $f=0$ を強いる． | [`OperatorConvexAll.eq_zero`](ComparatorChallenges/Paper1.lean#L388) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.SS1) | `OperatorConcaveAll` は $f=0$ を強いる． | [`OperatorConcaveAll.eq_zero`](ComparatorChallenges/Paper1.lean#L396) |
-| [上⁠に⁠同⁠じ](https://arxiv.org/html/2607.05492v1#S3.SS1) | $x\mapsto x^2$ は $[0,\infty)$ 上で一様に作用素凸である． | [`operatorConvexOnAll_Ici_sq`](ComparatorChallenges/Paper1.lean#L404) |
-
-### 定理で使う定義
-
-下の表は，[`Paper1.lean`](ComparatorChallenges/Paper1.lean) の 34 個の定理のステートメントに現れる定義を，[結果](#結果)の各節で触れた順に説明します．Mathlib の定義は載せていません．各項目は，Lean の定義が述べていることを，想定する入力の外での値も含めて書きます．
+この節の表の主張で使う Lean の定義と，それぞれの定義の内容の一覧です．
 
 | Lean&nbsp;の&#8288;定&#8288;義 | 定義の内容 |
 |---|---|
-| **共通** | |
-| [`Qudit`](Quantum/QuantumMechanics/QuantumState.lean#L20) | 有限次元の複素内積空間（ノルム付きで完備）の型クラス．次元 $0$ も許し，非零は別の仮定 `Nontrivial` |
-| [`L`](Quantum/QuantumMechanics/OperatorNotation.lean#L26) | 複素線形写像 `ℋ →ₗ[ℂ] ℋ` の型 `L ℋ`．順序は Mathlib の Löwner 順序（ $X\le Y$ は $Y-X$ が半正定値であること） |
-| [`B`](Quantum/QuantumMechanics/OperatorNotation.lean#L29) | 有界（連続）な複素線形作用素 `ℋ →L[ℂ] ℋ` の型 `B ℋ`．順序は Löwner 順序 |
-| [`Tr`](Quantum/QuantumMechanics/QuantumState.lean#L39) | `L ℋ` 上のトレース `LinearMap.trace ℂ ℋ` ．値は複素数 |
-| [`T`](Quantum/QuantumMechanics/Channel/Basic.lean#L31) | 複素線形写像 `L ℋ₁ →ₗ[ℂ] L ℋ₂` の型 `T ℋ₁ ℋ₂`．正値性やトレースの条件は含まない |
-| **1. 完全正値性とチャネルの表現** | |
-| [`IsCompletelyPositive`](Quantum/QuantumMechanics/Channel/AmplificationCore.lean#L111) | Mathlib の意味（`CompletelyPositiveMap`）で完全正：任意の $k$ について， $\Phi$ を成分ごとに作用させると，C*-環 `L ℋ₁` を成分とする $k\times k$ の正の行列が正の行列に移る |
-| [`AmplificationPositive`](Quantum/QuantumMechanics/Channel/TensorModel.lean#L282) | $L(\mathcal H_1\otimes\mathcal H_1)$ から $L(\mathcal H_2\otimes\mathcal H_1)$ への $\Phi\otimes\mathrm{id}_{L(\mathcal H_1)}$ が半正定値作用素を半正定値作用素に移す |
-| [`ChoiPositive`](Quantum/QuantumMechanics/Channel/Representations.lean#L36) | $\mathcal H_1$ の基底 $b$ （正規直交とは限らない）について， $\Omega_b=\sum_ib_i\otimes b_i=\mathrm{vec}_b(I)$ とおくと $L(\mathcal H_2\otimes\mathcal H_1)$ で $(\Phi\otimes\mathrm{id})(\lvert\Omega_b\rangle\langle\Omega_b\rvert)\ge0$ |
-| [`HasKraus`](Quantum/QuantumMechanics/Channel/Representations.lean#L68) | 有限の添字型 $\kappa$ （空でもよく， $\mathcal H_1$ と同じ宇宙）と線形写像 $A_a:\mathcal H_1\to\mathcal H_2$ があって，すべての $X$ で $\Phi(X)=\sum_{a\in\kappa}A_aXA_a^\dagger$ |
-| [`HasRankKraus`](Quantum/QuantumMechanics/Channel/Representations.lean#L72) | `HasKraus` で，さらに $\lvert\kappa\rvert$ が `choiRank b Φ` （下）に等しい |
-| [`traceOutRight`](Quantum/QuantumMechanics/Channel/Representations.lean#L232) | 右の因子についての部分トレース．線形写像 $L(\mathcal H_2\otimes\mathcal H_3)\to L(\mathcal H_2)$ で $X\otimes Y\mapsto\mathrm{Tr}(Y)X$ （因子を入れ替えてから下の `traceOutLeft` を適用して定義） |
-| [`choiRank`](Quantum/QuantumMechanics/Channel/Representations.lean#L60) | `ChoiPositive` の Choi 作用素 $(\Phi\otimes\mathrm{id})(\lvert\Omega_b\rangle\langle\Omega_b\rvert)$ の階数（値域の次元）．値は自然数 |
-| **2. 作用素単調・作用素凸な冪関数** | |
-| [`OperatorMonotoneOn`](Quantum/TraceInequality/LownerHeinz/Defs.lean#L79) | 固定した順序付きの C*-環で，スペクトルが $s$ に含まれる自己共役な $A,B$ が $B\le A$ なら $f(B)\le f(A)$ ．ここで $f(A)$ は Mathlib の連続関数計算 `cfc f A` |
-| [`LownerHeinzCore.OperatorConcaveOn`](Quantum/TraceInequality/LownerHeinz/Defs.lean#L241) | 同じ環での `OperatorConvexOn s (-f)` （下） |
-| [`OperatorConvexOn`](Quantum/TraceInequality/LownerHeinz/Defs.lean#L191) | 固定した順序付きの C*-環で，スペクトルが $s$ に含まれる自己共役な $A,B$ と $t\in[0,1]$ について $f((1-t)A+tB)\le(1-t)f(A)+tf(B)$ （`cfc`）． $(1-t)A+tB$ のスペクトルには別の条件を課さない |
-| **3. Jensen の作用素不等式と一般化されたパースペクティブ** | |
-| [`OperatorConvexIciAllContNonposAtZero`](Quantum/TraceInequality/JensenOperatorInequalityIImpIV.lean#L75) | `OperatorConvexOnAll (Set.Ici 0) f` （下）， $[0,\infty)$ 上での $f$ の連続性， $f(0)\le0$ の三つ |
-| [`JensenContractiveColumnCondition`](Quantum/TraceInequality/JensenOperatorInequalityIImpIV.lean#L84) | 固定した Hilbert 空間で，スペクトルが $[0,\infty)$ に含まれる自己共役な $A,B$ （`B ℋ` の元）と $X^\dagger X+Y^\dagger Y\le I$ を満たす $X,Y$ について $f(X^\dagger AX+Y^\dagger BY)\le X^\dagger f(A)X+Y^\dagger f(B)Y$ （下の `cfcR`） |
-| [`LownerHeinzTheorem.OperatorConcaveOn`](Quantum/TraceInequality/LownerHeinzTheorem.lean#L91) | 与えられた Hilbert 空間 $\mathcal H$ の C*-環 `B ℋ` での `LownerHeinzCore.OperatorConcaveOn s f` |
-| [`JointlyConvexOn`](Quantum/TraceInequality/GeneralizedPerspectiveFunction.lean#L32) | $A_1,A_2\in s$ ， $B_1,B_2\in t$ ， $\theta\in[0,1]$ について， $A_\theta=(1-\theta)A_1+\theta A_2$ ， $B_\theta=(1-\theta)B_1+\theta B_2$ とおくと $\Phi(A_\theta,B_\theta)$ は $(1-\theta)\Phi(A_1,B_1)+\theta\Phi(A_2,B_2)$ 以下． $s,t$ の凸性は要求しない |
-| [`psdSet`](Quantum/TraceInequality/GeneralizedPerspectiveFunction.lean#L97) | `B ℋ` の元のうち，自己共役でスペクトルが $[0,\infty)$ に含まれるものの集合 |
-| [`pdSet`](Quantum/TraceInequality/GeneralizedPerspectiveFunction.lean#L101) | `B ℋ` の元のうち，自己共役でスペクトルが $(0,\infty)$ に含まれるもの（半正定値かつ可逆）の集合 |
-| [`generalizedPerspective`](Quantum/TraceInequality/GeneralizedPerspectiveFunction.lean#L81) | $h(B)^{1/2}f(h(B)^{-1/2}Ah(B)^{-1/2})h(B)^{1/2}$ ．ここで $h(B)^{\pm1/2}$ は `cfcR (fun x ↦ h x ^ (±1/2)) B` （`cfcR` は下）．すべての $A,B$ で定義し， $h(B)$ の正値性と可逆性は定理の側で仮定する |
-| [`OperatorConcaveOnAll`](Quantum/TraceInequality/LownerHeinzTheorem.lean#L204) | 宇宙 `u` のすべての零でない完備な複素 Hilbert 空間 $K$ （次元は任意）での `LownerHeinzTheorem.OperatorConcaveOn s f` |
-| [`JointlyConcaveOn`](Quantum/TraceInequality/GeneralizedPerspectiveFunction.lean#L44) | `JointlyConvexOn` の不等式を逆向きにしたもの |
-| [`cfcR`](Quantum/TraceInequality/LownerHeinzTheorem.lean#L37) | `B ℋ` の元 $A$ に対する Mathlib の `cfc f A` （実連続関数計算による $f(A)$ ）． $A$ が自己共役でないか， $f$ が $A$ のスペクトル上で連続でなければ $0$ |
-| [`OperatorConvexOnAll`](Quantum/TraceInequality/LownerHeinzTheorem.lean#L169) | 宇宙 `u` のすべての零でない完備な複素 Hilbert 空間 $K$ （次元は任意）で，`B K` における `LownerHeinzCore.OperatorConvexOn s f` |
-| **4. Lieb–Ando トレース不等式** | |
-| [`pdSetLM`](Quantum/QuantumEntropy/Common/PositiveDefiniteSet.lean#L47) | `L ℋ` の元のうち，有界作用素とみなすと `pdSet` に入るものの集合（自己共役でスペクトルが $(0,\infty)$ に含まれる，すなわち正定値） |
-| [`liebTraceMap`](Quantum/TraceInequality/LiebAndo/TraceMapLM.lean#L21) | `liebTraceMap s K A B` $=\mathrm{Re}\,\mathrm{Tr}[A^sK^\dagger B^{1-s}K]\in\mathbb R$ ．冪は Mathlib の `CFC.rpow` （半正定値でない引数では $0$ ） |
-| [`andoTraceMap`](Quantum/TraceInequality/LiebAndo/TraceMapLM.lean#L26) | `andoTraceMap q r K A B` $=\mathrm{Re}\,\mathrm{Tr}[A^qK^\dagger B^{-r}K]\in\mathbb R$ ．冪は同じく `CFC.rpow` |
-| **5. サンドイッチ Rényi 相対エントロピーのデータ処理不等式とその帰結** | |
-| [`CPTP`](Quantum/QuantumMechanics/Channel/Basic.lean#L40) | 構造体．Mathlib の完全正写像 `CompletelyPositiveMap` で `L ℋ₁ → L ℋ₂` のもののうち，すべての $\rho$ で $\mathrm{Tr}\,\Phi(\rho)=\mathrm{Tr}\,\rho$ を満たすもの．写像は `Φ.toFun` |
-| [`sandwichedRenyiDiv`](Quantum/QuantumEntropy/SandwichedRenyi/DefinitionCore.lean#L79) | 実数値の $\frac{1}{\alpha-1}\log\frac{\mathrm{Re}\,Q_\alpha(\rho\Vert\sigma)}{\mathrm{Re}\,\mathrm{Tr}\rho}$ （ $Q_\alpha$ は下の `sandwichedQuasi`）．Lean の `Real.log` では $\log0=0$ で，サポートの条件は課さない． $\alpha=1$ での値は $0$ |
-| [`sandwichedRenyiDivNN`](Quantum/QuantumEntropy/SandwichedRenyi/NonNeg/Defs.lean#L43) | 拡張実数値． $\alpha>1$ で `SupportLE ρ σ` （下）が成り立たないとき，または $\alpha<1$ ， $\rho\ne0$ ， $\mathrm{Re}\,Q_\alpha(\rho\Vert\sigma)=0$ のときは $+\infty$ ．それ以外は `sandwichedRenyiDiv α ρ σ` ．特に $D_\alpha(0\Vert\sigma)=0$ |
-| [`IsDensity`](Quantum/QuantumMechanics/QuantumState.lean#L59) | $X$ が半正定値（`IsPositive`）で $\mathrm{Tr}X=1$ |
-| [`IsPositiveDefinite`](Quantum/QuantumMechanics/QuantumState.lean#L51) | $X$ が半正定値で $\det X\ne0$ |
-| [`vonNeumannEntropy`](Quantum/QuantumEntropy/VonNeumann/Basic.lean#L115) | $S(\rho)=-\mathrm{Re}\,\mathrm{Tr}[\rho\log\rho]\in\mathbb R$ ． $\log$ は Mathlib の `CFC.log` （`cfc Real.log` なので核の上では $\log0=0$ ）．すべての作用素で定義 |
-| [`traceOutLeft`](Quantum/QuantumMechanics/Channel/Basic.lean#L89) | 左の因子についての部分トレース．線形写像 $L(\mathcal H_1\otimes\mathcal H_2)\to L(\mathcal H_2)$ で $X\otimes Y\mapsto\mathrm{Tr}(X)Y$ |
-| [`traceOutThird`](Quantum/QuantumEntropy/VonNeumann/PartialTraceThirdCPTP.lean#L96) | $L(\mathcal H_1\otimes(\mathcal H_2\otimes\mathcal H_3))$ から $L(\mathcal H_1\otimes\mathcal H_2)$ への写像．結合の同型で組み替えてから `traceOutRight` を適用する（ $\rho_{ABC}\mapsto\rho_{AB}$ ） |
-| [`umegakiNorm`](Quantum/QuantumEntropy/UmegakiDPI/AlphaOneCore.lean#L30) | $\mathrm{Re}\,\mathrm{Tr}[\rho(\log\rho-\log\sigma)]$ を $\mathrm{Re}\,\mathrm{Tr}\,\rho$ で割った実数値（`CFC.log`）．サポートの条件は課さない |
-| [`tripartiteReference`](ComparatorChallenges/Paper1.lean#L42) | `tripartiteReference X Y` は $L((A\otimes B)\otimes C)$ の $X\otimes Y$ を，結合の同型で $L(A\otimes(B\otimes C))$ に移したもの |
-| [`sandwichedQuasi`](Quantum/QuantumEntropy/SandwichedRenyi/DefinitionCore.lean#L33) | $Q_\alpha(\rho\Vert\sigma)=\mathrm{Tr}[(\sigma^{\gamma}\rho\sigma^{\gamma})^{\alpha}]\in\mathbb C$ ， $\gamma=(1-\alpha)/(2\alpha)$ ．冪は `CFC.rpow` （半正定値な $\sigma$ の負の冪はサポートの上でとり，核の上では $0$ ） |
-| [`SupportLE`](Quantum/QuantumEntropy/Common/Support.lean#L26) | $\ker\sigma\subseteq\ker\rho$ （自己共役な $\rho,\sigma$ では $\mathrm{supp}\rho\subseteq\mathrm{supp}\sigma$ と同じ） |
-| **6. 診断の結果** | |
-| <a id="def-operatorconvex"></a>[`OperatorConvex`](Quantum/TraceInequality/LownerHeinz/Defs.lean#L159) | 固定した順序付きの C*-環のすべての元 $A,B$ （自己共役とは限らない）と $t\in[0,1]$ について $f((1-t)A+tB)\le(1-t)f(A)+tf(B)$ （`cfc` は自己共役でない元で $0$ ） |
-| <a id="def-operatorconcave"></a>[`OperatorConcave`](Quantum/TraceInequality/LownerHeinz/Defs.lean#L218) | `OperatorConvex (-f)` |
-| <a id="def-operatorconvexall"></a>[`OperatorConvexAll`](Quantum/TraceInequality/LownerHeinzTheorem.lean#L152) | 宇宙 `u` のすべての零でない完備な複素 Hilbert 空間 $K$ で，`B K` における `OperatorConvex f` |
-| <a id="def-operatorconcaveall"></a>[`OperatorConcaveAll`](Quantum/TraceInequality/LownerHeinzTheorem.lean#L187) | 宇宙 `u` のすべての零でない完備な複素 Hilbert 空間 $K$ で，`B K` における `OperatorConcave f` |
+| [`LoewnerPosOnUnitInterval`](Quantum/TraceInequality/Loewner/Statement.lean#L132) | (a)： $f$ は $(-1,1)$ で微分可能で，Löwner 行列（対角は $f'$ ）が半正定値 |
+| [`PickExtensionOnUnitInterval`](Quantum/TraceInequality/Loewner/Statement.lean#L120) | (b)： $(-1,1)$ で $f$ と一致し，上半平面を閉上半平面へ写す解析接続 $F$ がある |
+| [`IntegralRepOnUnitInterval`](Quantum/TraceInequality/Loewner/Statement.lean#L77) | (c)： $[-1,1]$ の外で 0 の有限測度 $\nu$ による $(-1,1)$ 上の積分表示 $f(x)=f(0)+\int_{[-1,1]}\frac{x}{1+tx}\thinspace d\nu(t)$ |
+| [`OperatorMonotoneOnUnitInterval`](Quantum/TraceInequality/Loewner/Statement.lean#L97) | (d)：単位元をもつとは限らないすべての C\*-環で， $f-f(0)$ が準スペクトルが $(-1,1)$ に入る自己共役元の上で単調 |
+| [`StrictDPIEquivalences`](Quantum/TraceInequality/HiaiPetz/Interface/Strict.lean#L76) | Hiai–&#8288;Petz の定理： $(0,\infty)$ 上で連続で正の $f$ について，2 節の (i)〜(iv) が同値（(ii)・(iii) は $\Phi(I)>0$ の写像について） |
+| [`OutputSupportDPIEquivalences`](Quantum/TraceInequality/HiaiPetz/Interface/OutputSupport.lean#L63) | Hiai–&#8288;Petz の定理の出力サポート形： $(0,\infty)$ 上で連続で正の $f$ について，2 節の (i)〜(iv) が同値（(ii)・(iii) は写像を出力サポートに圧縮して述べる） |
+| [`UmegakiDPI.MonotoneOnPosDef`](Quantum/QuantumEntropy/UmegakiDPI/Interface.lean#L21) | Umegaki DPI：TPCP 写像 $\Phi$ と，正定値の $\rho,\sigma,\Phi\rho,\Phi\sigma$ について $D(\Phi\rho\Vert\Phi\sigma)\leq D(\rho\Vert\sigma)$ （ $D$ は 4 節のトレースで割った Umegaki 相対エントロピー） |
+| [`Qudit`](Quantum/QuantumMechanics/QuantumState.lean#L19) | 有限次元の複素内積空間の型クラス．非零は別の仮定 `Nontrivial` |
+| [`CPTP`](Quantum/QuantumMechanics/Channel/Basic.lean#L35) | TPCP 写像：完全正でトレースを保つ線形写像 $L(\mathcal H_1)\to L(\mathcal H_2)$ の構造体 |
+| [`L`](Quantum/QuantumMechanics/QuantumState.lean#L27) | 線形作用素の型（基底を使&#8288;わ&#8288;な&#8288;い） |
+| [`umegakiRelEntropyNN`](Quantum/QuantumEntropy/Common/Umegaki/GSLCoreUmegaki.lean#L30) | Umegaki DPI の拡張の $D$ ：サポートの包含がなければ $+\infty$ ，あれば $\log$ をサポート上でとり，また $D(0\Vert\sigma):=0$ |
+| [`RenyiDPI.SandwichedSide`](Quantum/QuantumEntropy/RenyiDPI/Interface.lean#L86) | サンドイッチ DPI の 2 つの証明が示す 3 つの主張： $\alpha>1$ と $\rho,\sigma\geq0$ についての DPI，密度作用素のテンソル積での加法性，正定値の入力で $\alpha\to1$ （右から）の極限が Umegaki 相対エントロピーになること |
+| [`RenyiDPI.PetzSide`](Quantum/QuantumEntropy/RenyiDPI/Interface.lean#L79) | Petz DPI の 2 つの証明が示す 3 つの主張： $0\lt p\lt 1$ と $\rho,\sigma\geq0$ についての DPI，密度作用素のテンソル積での加法性，正定値の入力で $p\to1$ （左から）の極限が Umegaki 相対エントロピーになること |
+| [`Tr`](Quantum/QuantumMechanics/QuantumState.lean#L48) | トレース（複素数値） |
+| [`VonNeumann.vonNeumannEntropy`](Quantum/QuantumEntropy/VonNeumann/Basic.lean#L121) | $S(\rho):=-\mathrm{Re}\thinspace\mathrm{Tr}(\rho\ln\rho)$ |
+| [`QuantumChannel.traceOutRight`](Quantum/QuantumMechanics/Channel/Representations.lean#L227) | 右の因子の部分トレース． $\rho_{BC}$ から $\rho_B$ を得る |
+| [`QuantumChannel.traceOutLeft`](Quantum/QuantumMechanics/Channel/Basic.lean#L84) | 左の因子の部分トレース． $\rho_{ABC}$ から $\rho_{BC}$ を得る |
+| [`QuantumChannel.traceOutThird`](Quantum/QuantumEntropy/VonNeumann/PartialTraceThirdCPTP.lean#L96) | 3 つ目の因子の部分トレース． $\rho_{ABC}$ から $\rho_{AB}$ を得る |
+| [`State`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L52) | 密度作用素の部分型 |
+| [`Family`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L58) | 自由状態の集合の族 $F$ |
+| [`valid`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L99) | 密度作用素の条件と Gour の 4 条件：閉凸・置換で閉・テンソル積で閉・ $F_1$ に正定値の元（条件は $n\geq1$ について） |
+| [`hRate`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L146) | レート $h_n^\varepsilon$ |
+| [`reg`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L159) | $D^{\mathrm{reg}}(\rho\Vert F):=\inf_{n\geq1}u_n$ |
+| [`hyValid`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L232) | 密度作用素の条件と Hayashi–&#8288;Yamasaki の 3 条件：閉凸・テンソル積で閉・ $F_1$ に正定値の元（置換と部分トレースについての閉性は含まない） |
+| [`rate`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L141) | 数列 $a$ のレート $\frac{1}{n}a_n$ |
+| [`dSet`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L257) | $F$ 全体に 1 つの検定を使うときの $-\log_2\inf_M\sup_{\sigma\in F}\mathrm{Re}\thinspace\mathrm{Tr}(\sigma M)$ ． $M$ は第 1 種の誤りが $\varepsilon$ 以下の検定 |
+| [`pow`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L61) | $n$ コピーの空間上の $\rho^{\otimes n}$ |
+| [`uRate`](Quantum/QuantumEntropy/GourResource/Definitions.lean#L151) | レート $u_n$ （底 2 の Umegaki 相対エントロピー） |
 
-## ポスター発表（AQIS 2026）
+## Comparator による検査
 
-サムネイルをクリックすると，AQIS 2026 で発表したポスターを表示します．
+[Comparator](https://github.com/leanprover/comparator) は，ステートメントだけのファイル [Paper2.lean](ComparatorChallenges/Paper2.lean) と，証明のファイル [Paper2Solution.lean](ComparatorChallenges/Paper2Solution.lean) を照合する道具です．各定理のステートメントが両方のファイルで同じであること（ステートメントで使う定義も含めて）と，Lean の標準の 3 公理（`propext`，`Quot.sound`，`Classical.choice`）しか使わないことを確かめ，証明を Lean と nanoda（Lean とは別に作られた証明検査器）の 2 つの kernel で検査し直します．Paper2.lean の定理は 19 件で，[主要定理](#このコードで形式化した主要定理)の表の 11 件と，ほかの 8 件です．8 件は，Hiai–&#8288;Petz の定理を 2 つの証明のそれぞれで示したものと，Umegaki DPI をサンドイッチ DPI と Petz DPI のそれぞれの極限として示したものです． <a id="証明の検査"></a>
 
-このポスターは発表したときのまま保存しており，当時の我々の開発ブランチ（非公開）の計画，例，ビルドの統計を含みます．このリポジトリで扱う範囲は[対象範囲](#対象範囲)を見てください．
+Comparator の保証は，Comparator の[前提](https://github.com/leanprover/comparator/blob/2312244ac716564a61cc0bf4e107d9abf1757a61/README.md)（ステートメントのファイルが読み込むモジュールと lakefile を信用すること，検査の環境が汚されていないこと，隔離が正しく働くこと，2 つの kernel の少なくとも一方が正しいこと，など）が成り立ち，検査が成功したときのものです．そのとき信用すればよいのは，Paper2.lean のステートメントとそこで使う定義と，検査の設定 [ComparatorChallenges/Paper2.json](ComparatorChallenges/Paper2.json)（照合する定理の名前・許す公理・nanoda の使用）です．
 
-<p align="center">
-  <a href="poster/aqis2026.pdf">
-    <img src="poster/aqis2026-thumbnail.png" alt="AQIS 2026 のポスター: Lean-Quantum: Toward AI-Assisted Formalization of Quantum Information" width="480">
-  </a>
-</p>
+今回の実行では，19 件はすべて Linux（Ubuntu 24.04）で通過しました．解答のビルドは landrun の中で行いました．この実行はこのリポジトリの既知の解答の検証で，未知の解答に対する隔離の保証ではありません．手順は [ComparatorChallenges/README.md](ComparatorChallenges/README.md) にあります．
+
+Comparator では，ステートメントとそこで使う定義が意図どおりかは確かめられません．それは人が確かめます（いまは著者だけです）．
+
+<!-- gsl-summary -->
+GQSL の 3 つの定理の本体は [`GourResource.gsl_y54`](Quantum/QuantumEntropy/GourResource/GeneralizedStein.lean#L141)，[`GourResource.gsl_y53`](Quantum/QuantumEntropy/GourResource/GeneralizedStein.lean#L53)，[`GourResource.gsl_y55`](Quantum/QuantumEntropy/GourResource/GeneralizedStein.lean#L114) です．中心の 2 つ（Gour の定理 11.4 と Hayashi–&#8288;Yamasaki の定理 1）は，別の Comparator の設定 [gsl.json](ComparatorChallenges/gsl.json) でもステートメント [`Gsl.y54`](ComparatorChallenges/GslChallenge.lean#L9)・[`Gsl.y53`](ComparatorChallenges/GslChallenge.lean#L15) として照合しています．
+
+## 先行研究
+
+このリポジトリの形式化に先立って，Meiburg–&#8288;Lessa–&#8288;Soldati（2025，[arXiv:2510.08672](https://arxiv.org/abs/2510.08672)）は，同じ Hayashi–&#8288;Yamasaki の証明に沿って GQSL を Lean で形式化しました（そのライブラリ [Lean-QuantumInfo](https://github.com/Timeroot/Lean-QuantumInfo) は，いまは Lean コミュニティの物理学ライブラリ [Physlib](https://reservoir.lean-lang.org/@leanprover-community/Physlib) の一部です）．そこで既知の結果として使うサンドイッチ Rényi ダイバージェンスの DPI は，当初は証明が `sorry`（証明を省いたことを示す印）のままで，Physlib の GQSL の証明に最後に残った `sorry` でした．この未証明部分も，このリポジトリの形式化より前に，[我々の前報](https://arxiv.org/abs/2607.05492)の Lean-Quantum の作用素不等式の Lean ファイル群（この DPI の証明に使う Lieb の凹性を含む）が，Meiburg 氏との私信などを経て Physlib に[移植](https://github.com/leanprover-community/physlib/pull/1082)されたことで埋まりました．我々は，これを形式化したコードが再利用できることの一つの実例と考えています．
+
+なお，このリポジトリの GQSL の証明も Hayashi–&#8288;Yamasaki の証明に従います（Gour の定理 11.4 の形も含む）．その証明が前提として使う DPI（サンドイッチ・Petz・Umegaki）は，このリポジトリで作用素不等式から証明しています．
+
+## ポスター発表（IBIS 2026）
+
+このリポジトリの形式化を，IBIS 2026（第 29 回情報論的学習理論ワークショップ）のポスターセッション 2（2026 年 10 月 28 日（水）14:30–17:30 JST，ソニックシティ，埼玉県さいたま市）で発表します．ポスター（日本語）：[PDF](poster/paper2-poster-ja.pdf)
 
 ## 引用方法
 
-このライブラリを使う場合は，対応する[論文](https://arxiv.org/abs/2607.05492)を引用してください：
+Paper 2 の原稿は準備中です．原稿が公開されるまでは，共通の道具を与える前報 [arXiv:2607.05492](https://arxiv.org/abs/2607.05492) を引用してください：
 
 ```bibtex
 @article{kasaura2026leanquantum,

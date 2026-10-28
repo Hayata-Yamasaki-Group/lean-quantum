@@ -1,0 +1,33 @@
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.Basic
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.LoewnerPosBasic
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.Mollifier
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.ScaledWeight
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.LocalClipStieltjes
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.DominatedData
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.IocStepCore
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.IocUniformStep
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.RegularizationConvolution
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.ClippedComparison
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.RegularizationKernelPSD
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.AffinePullbackPSD
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.RegularizationSmoothness
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.RegularizedDerivativeContinuity
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.ConditionalKernelPSD
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.ForwardCoefficientSource
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.HiaiSlopeCore
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.TwoThreePointDiagnostics
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.ConfluentHankelC5
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.RegularizedConfluentHankel
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.RegularizedSecondDerivativeLimit
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.HiaiSlopeLocalBound
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.SecondDerivativeLimit
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.ThirdDerivativeLimit
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.FiniteOrderLadder
+import Quantum.TraceInequality.Loewner.UnitInterval.FiniteOrder.CanonicalStrictificationBridge
+
+/-!
+# Chapter 20 finite-order regularity aggregate
+
+Aggregate for the responsibility-based Chapter 20 finite-order regularity
+modules.
+-/

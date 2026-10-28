@@ -25,13 +25,6 @@ omit [Nontrivial ℋ] in
 lemma isUnit_of_pdSetLM {A : L ℋ} (hA : A ∈ pdSetLM (ℋ := ℋ)) : IsUnit A := by
   exact ((pdSetLM_strictPositivity_certificate A).1 hA).isUnit
 
-omit [Nontrivial ℋ] in
-lemma pdSetLM_star_conjugate {A B : L ℋ} (hA : A ∈ pdSetLM (ℋ := ℋ)) (hB : IsUnit B) :
-    star B * A * B ∈ pdSetLM (ℋ := ℋ) := by
-  apply (pdSetLM_strictPositivity_certificate _).2
-  exact hB.isStrictlyPositive_star_left_conjugate_iff.mpr
-    ((pdSetLM_strictPositivity_certificate A).1 hA)
-
 end TraceConjPowConcavity
 
 section Monotonicity

@@ -8,9 +8,7 @@ import Quantum.QuantumMechanics.QuantumState
 import Quantum.QuantumMechanics.OperatorInstances
 
 /-!
-This proof-support layer connects linear endomorphisms to bounded operators.
-It provides the canonical star-algebra equivalence used by proofs
-that apply Mathlib's bounded-operator analysis.
+The canonical star-algebra equivalence between linear and continuous endomorphisms.
 -/
 
 namespace QuantumChannel

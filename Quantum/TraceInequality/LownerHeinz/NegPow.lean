@@ -4,12 +4,15 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Hayata Yamasaki
 -/
 
-import Quantum.TraceInequality.LownerHeinz.RpowOneTwo
+import Quantum.TraceInequality.LiebAndo.AndoConvexity.LownerHeinz.RpowOneTwo
+import Quantum.TraceInequality.LownerHeinz.DefsRetained
+import Quantum.TraceInequality.TraceFunctionMonotonicity.LownerHeinz.Defs
+import Quantum.TraceInequality.TraceFunctionMonotonicity.LownerHeinz.RpowZeroOne
 
 /-!
 # Negative powers on the positive spectrum
 
-This file is part of the split `LownerHeinzCore` development.
+
 -/
 
 namespace LownerHeinzCore
@@ -76,35 +79,35 @@ private lemma cfcR_one_div_cfcR_rpow {X : 𝓐} (hX : IsSelfAdjoint X)
 -- Paper statement (Löwner–Heinz): for `p ∈ [-1,0]`, `f(t) = -t^p` is operator monotone and concave
 -- on `(0,∞)`.
 omit [Nontrivial 𝓐] in
-/-- Monotonicity of sign-reversed negative powers
-(Carlen 2010, Theorem 2.6, first clause; proof using Lemma 2.8, formula (2.5))
+/-- `x ↦ -(x ^ p)` is operator monotone on `(0, ∞)` for `p ∈ [-1, 0]`.
 
-For $-1 \leq p \leq 0$, the
-function $f(t)=-t^p$ is operator monotone.
-\emph{Lean deviation}: stated as $x \mapsto -x^p$ operator monotone on $(0,\infty)$ in the
-sense of `OperatorMonotoneOn`, over a unital $C^*$-algebra rather than matrices.
-
-Proof: Carlen (2010), proof of Theorem 2.6: for $-1<p<0$, Lemma 2.8 gives
-\[
-  A^p = \frac{\sin(\pi(p+1))}{\pi}
-    \int_0^\infty t^p\frac1{t+A}\,\mathrm{d}t .
-\]
-Since Lemma 2.7 makes $A \mapsto -(t+A)^{-1}$ operator monotone and the weights are
-positive, $A \mapsto -A^p$ is operator monotone; the endpoint cases $p=-1,0$ are covered
-by Lemma 2.7 and triviality.
-\emph{Lean deviation}: the formal proof derives the result from the already-formalized
-$0 \leq q \leq 1$ monotonicity for $x^q$ with $q=-p$ from
-`power_Icc_zero_one_operatorMonotoneOn_Ici`, then composes with the reciprocal and uses
-`one_div_operatorAntitoneOn_Ioi`, rather than using the integral representation (2.5) directly.
-
-Source: this paper, arXiv:2607.05492v1, formalization of the main results in §3 (no individual paper
-theorem number is assigned).
+Source: arXiv:2607.05492v1, §3.
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence restricted to the exponent
 range and domain of this declaration. -/
-theorem power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi : ∀ p ∈ Set.Icc (-1 : ℝ) 0,
+/- Monotonicity of sign-reversed negative powers
+    (Carlen 2009, Theorem 2.6, first clause; proof using Lemma 2.8, formula (2.5)) -/
+/- (Carlen 2009, Theorem 2.6, first clause; proof using Lemma 2.8, formula (2.5)) For
+    $-1 \leq p \leq 0$, the function $f(t)=-t^p$ is operator monotone.
+    *Lean deviation*: stated as $x \mapsto -x^p$ operator monotone on $(0,\infty)$ in the
+    sense of the definition of `OperatorMonotoneOn`, over a unital $C^*$-algebra rather than
+    matrices. -/
+/- Carlen09 (proof of Theorem 2.6): for $-1<p<0$, Lemma 2.8 gives
+    \[
+      A^p = \frac{\sin(\pi(p+1))}{\pi}
+        \int_0^\infty t^p\frac1{t+A}\,\mathrm{d}t .
+    \]
+    Since Lemma 2.7 makes $A \mapsto -(t+A)^{-1}$ operator monotone and the weights are
+    positive, $A \mapsto -A^p$ is operator monotone; the endpoint cases $p=-1,0$ are covered
+    by Lemma 2.7 and triviality.
+    *Lean deviation*: the formal proof derives the result from the already-formalized
+    $0 \leq q \leq 1$ monotonicity for $x^q$ with $q=-p$ from
+    the Löwner–Heinz theorem (`power_Icc_zero_one_operatorMonotoneOn_Ici`), then composes with the
+    reciprocal and uses reciprocal antitonicity (`one_div_operatorAntitoneOn_Ioi`), rather than
+    using the integral representation (2.5) directly. -/
+theorem power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi (p : ℝ)
+    (hp : p ∈ Set.Icc (-1 : ℝ) 0) :
     OperatorMonotoneOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x ↦ -(x ^ p)) := by
-  intro p hp
   dsimp [OperatorMonotoneOn]
   intro A B hA_sa hB_sa hBA hspA hspB
   let q : ℝ := -p
@@ -142,61 +145,58 @@ theorem cfcR_neg_rpow_le_cfcR_neg_rpow_of_le {p : ℝ}
   power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi p hp hA hB hBA hspA hspB
 
 omit [Nontrivial 𝓐] in
-/-- Antitonicity of negative powers
-(Carlen 2010, equivalent antitone form of Theorem 2.6, first clause; proof using Lemma 2.8, formula
-(2.5))
-
-For
-$-1 \leq p \leq 0$, the function $x \mapsto x^p$ is operator monotone decreasing on
-$(0,\infty)$.
-\emph{Lean deviation}: stated as operator antitonicity on $(0,\infty)$ in the sense of
-`OperatorAntitoneOn`, over a unital $C^*$-algebra rather than matrices.
-
-This is the antitone
+/-- `x ↦ x ^ p` is operator antitone on `(0, ∞)` for `p ∈ [-1, 0]`. This is the antitone
 restatement of `power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi`.
-
-Proof: Carlen (2010): this is just the decreasing-language reformulation of the first
-clause of Theorem 2.6, whose proof uses (2.5) and Lemma 2.7 to show that $-A^p$ is a
-positive weighted sum of shifted monotone reciprocals.
-\emph{Lean deviation}: the formal proof is the wrapper
-\texttt{operatorAntitoneOn\_iff\_operatorMonotoneOn\_neg} applied to
-`power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi`; it introduces no new analytic argument.
 
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence restricted to the exponent
 range and domain of this declaration. -/
+/- Antitonicity of negative powers
+    (Carlen 2009, equivalent antitone form of Theorem 2.6, first clause; proof using Lemma 2.8,
+    formula (2.5)) -/
+/- (Carlen 2009, equivalent antitone form of Theorem 2.6, first clause; proof using Lemma 2.8,
+    formula (2.5)) For $-1 \leq p \leq 0$, the function $x \mapsto x^p$ is operator monotone
+    decreasing on $(0,\infty)$.
+    *Lean deviation*: stated as operator antitonicity on $(0,\infty)$ in the sense of
+    the definition of `OperatorAntitoneOn`, over a unital $C^*$-algebra rather than matrices. -/
+/- Carlen09: this is just the decreasing-language reformulation of the first
+    clause of Theorem 2.6, whose proof uses (2.5) and Lemma 2.7 to show that $-A^p$ is a
+    positive weighted sum of shifted monotone reciprocals.
+    *Lean deviation*: the formal proof is the wrapper
+    `operatorAntitoneOn_iff_operatorMonotoneOn_neg` applied to
+    the negative-power result `power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi`; it introduces no
+    new analytic argument. -/
 theorem power_Icc_neg_one_zero_operatorAntitoneOn_Ioi (p : ℝ)
     (hp : p ∈ Set.Icc (-1 : ℝ) 0) :
     OperatorAntitoneOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x ↦ x ^ p) :=
   (operatorAntitoneOn_iff_operatorMonotoneOn_neg _ _).mpr
     (power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi p hp)
 
-/-- Concavity of sign-reversed negative powers
-(Carlen 2010, Theorem 2.6, first clause; proof using Lemma 2.8, formula (2.5))
+/-- `x ↦ -(x ^ p)` is operator concave on `(0, ∞)` for `p ∈ [-1, 0]`.
 
-For $-1 \leq p \leq 0$, the
-function $f(t)=-t^p$ is operator concave.
-\emph{Lean deviation}: stated as $x \mapsto -x^p$ operator concave on $(0,\infty)$ in the
-sense of `OperatorConcaveOn`, over a unital $C^*$-algebra rather than matrices.
-
-Proof: Carlen (2010), proof of Theorem 2.6: for $-1<p<0$, formula (2.5) writes $A^p$ as
-a positive weighted integral of $(t+A)^{-1}$. Since Lemma 2.7 gives
-$A \mapsto -(t+A)^{-1}$ operator concave, positive weighted sums show that
-$A \mapsto -A^p$ is operator concave; the endpoint cases are supplied by Lemma 2.7 and
-triviality.
-\emph{Lean deviation}: the formal proof shows the equivalent convexity of $x^p$ for
-negative $p$ by setting $r=-p$, using the $0 \leq r \leq 1$ concavity theorem
-`operatorConcaveOn_rpow_Ici` for $x^r$, then applying reciprocal antitonicity and convexity
-from `one_div_operatorAntitoneOn_Ioi` and `operatorConvexOn_one_div_Ioi`.
-
-Source: this paper, arXiv:2607.05492v1, formalization of the main results in §3 (no individual paper
-theorem number is assigned).
+Source: arXiv:2607.05492v1, §3.
 Source: Eric Carlen, "Trace Inequalities and Quantum Entropy: An Introductory Course",
 Contemporary Mathematics 529 (2010), 73–140, Theorem 2.6. Correspondence restricted to the exponent
 range and domain of this declaration. -/
-theorem operatorConcaveOn_neg_rpow_Ioi : ∀ p ∈ Set.Icc (-1 : ℝ) 0,
+/- Concavity of sign-reversed negative powers
+    (Carlen 2009, Theorem 2.6, first clause; proof using Lemma 2.8, formula (2.5)) -/
+/- (Carlen 2009, Theorem 2.6, first clause; proof using Lemma 2.8, formula (2.5)) For
+    $-1 \leq p \leq 0$, the function $f(t)=-t^p$ is operator concave.
+    *Lean deviation*: stated as $x \mapsto -x^p$ operator concave on $(0,\infty)$ in the
+    sense of the definition of `OperatorConcaveOn`, over a unital $C^*$-algebra rather than
+    matrices. -/
+/- Carlen09 (proof of Theorem 2.6): for $-1<p<0$, formula (2.5) writes $A^p$ as
+    a positive weighted integral of $(t+A)^{-1}$. Since Lemma 2.7 gives
+    $A \mapsto -(t+A)^{-1}$ operator concave, positive weighted sums show that
+    $A \mapsto -A^p$ is operator concave; the endpoint cases are supplied by Lemma 2.7 and
+    triviality.
+    *Lean deviation*: the formal proof shows the equivalent convexity of $x^p$ for
+    negative $p$ by setting $r=-p$, using the $0 \leq r \leq 1$ concavity theorem
+    `power_Icc_zero_one_operatorConcaveOn_Ici` for $x^r$, then applying reciprocal antitonicity and
+    convexity from `one_div_operatorAntitoneOn_Ioi` and `one_div_operatorConvexOn_Ioi`. -/
+theorem power_Icc_neg_one_zero_neg_operatorConcaveOn_Ioi (p : ℝ)
+    (hp : p ∈ Set.Icc (-1 : ℝ) 0) :
     OperatorConcaveOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x ↦ -(x ^ p)) := by
-  intro p hp
   dsimp [OperatorConcaveOn, OperatorConvexOn]
   intro A B t hA hB ht0 ht1 As Bs
   let r : ℝ := -p
@@ -213,7 +213,7 @@ theorem operatorConcaveOn_neg_rpow_Ioi : ∀ p ∈ Set.Icc (-1 : ℝ) 0,
   let Dr : 𝓐 := (1 - t) • Ar + t • Br
   have h_conc : Dr ≤ Cr := neg_le_neg_iff.mp (by
     simpa [C, Ar, Br, Cr, Dr, cfcR, cfc_neg, smul_neg, add_comm] using
-      (operatorConcaveOn_rpow_Ici (𝓐 := 𝓐) r hr)
+      (power_Icc_zero_one_operatorConcaveOn_Ici (𝓐 := 𝓐) r hr)
         hA hB ht0 ht1 (As.trans Set.Ioi_subset_Ici_self)
           (Bs.trans Set.Ioi_subset_Ici_self))
   have hAr_sa : IsSelfAdjoint Ar := by dsimp [Ar, cfcR]; exact cfc_predicate _ _
@@ -234,7 +234,7 @@ theorem operatorConcaveOn_neg_rpow_Ioi : ∀ p ∈ Set.Icc (-1 : ℝ) 0,
         ≤ (1 - t) • cfcR (fun x : ℝ ↦ 1 / x) Ar
           + t • cfcR (fun x : ℝ ↦ 1 / x) Br := by
     simpa [Dr] using
-      (operatorConvexOn_one_div_Ioi (𝓐 := 𝓐))
+      (one_div_operatorConvexOn_Ioi (𝓐 := 𝓐))
         (A := Ar) (B := Br) (t := t) hAr_sa hBr_sa ht0 ht1 hspAr hspBr
   have hcompA : cfcR (fun x : ℝ ↦ 1 / x) Ar = cfcR (fun x : ℝ ↦ x ^ p) A := by
     simpa [Ar, r, neg_neg] using cfcR_one_div_cfcR_rpow hA As r

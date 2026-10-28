@@ -1,0 +1,10 @@
+#!/bin/sh
+# Run an installed comparator using this project's Lake environment.
+set -eu
+if [ "$#" -ne 3 ]; then
+  echo "usage: $0 COMPARATOR LEAN4EXPORT CONFIG" >&2
+  exit 64
+fi
+COMPARATOR_LEAN4EXPORT=$2
+export COMPARATOR_LEAN4EXPORT
+exec lake --no-cache env "$1" "$3"

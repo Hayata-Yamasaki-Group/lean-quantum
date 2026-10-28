@@ -5,6 +5,7 @@ Authors: Hayata Yamasaki
 -/
 
 import Quantum.TraceInequality.LownerHeinz.Log
+import Quantum.TraceInequality.LownerHeinz.RpowZeroOneRetained
 
 /-!
 # Spectral-order reexports
@@ -50,17 +51,15 @@ theorem cfcR_one_div_le_cfcR_one_div_of_le {A B : 𝓐}
     cfcR (fun x : ℝ ↦ 1 / x) A ≤ cfcR (fun x : ℝ ↦ 1 / x) B :=
   one_div_operatorAntitoneOn_Ioi hA hB hBA hspA hspB
 
-/-- Spectral-order version of `LownerHeinzCore.operatorConvexOn_one_div_Ioi`. -/
-theorem operatorConvexOn_one_div_Ioi :
+/-- Spectral-order version of `LownerHeinzCore.one_div_operatorConvexOn_Ioi`. -/
+theorem one_div_operatorConvexOn_Ioi :
     OperatorConvexOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x : ℝ ↦ 1 / x) := by
-  simpa using (LownerHeinzCore.operatorConvexOn_one_div_Ioi (𝓐 := 𝓐))
+  simpa using (LownerHeinzCore.one_div_operatorConvexOn_Ioi (𝓐 := 𝓐))
 
 omit [Nontrivial 𝓐] in
 /-- Spectral-order version of `LownerHeinzCore.one_div_add_t_operatorAntitoneOn_Ici`. -/
-theorem one_div_add_t_operatorAntitoneOn_Ici :
-  ∀ t : ℝ, 0 < t →
+theorem one_div_add_t_operatorAntitoneOn_Ici (t : ℝ) (ht : 0 < t) :
     OperatorAntitoneOn (𝓐 := 𝓐) (Set.Ici (0 : ℝ)) (fun x : ℝ ↦ 1 / (x + t)) := by
-  intro t ht
   simpa using (LownerHeinzCore.one_div_add_t_operatorAntitoneOn_Ici (𝓐 := 𝓐) t ht)
 
 omit [Nontrivial 𝓐] in
@@ -73,19 +72,15 @@ theorem cfcR_one_div_add_le_cfcR_one_div_add_of_le {t : ℝ} (ht : 0 < t)
     cfcR (fun x : ℝ ↦ 1 / (x + t)) A ≤ cfcR (fun x : ℝ ↦ 1 / (x + t)) B :=
   one_div_add_t_operatorAntitoneOn_Ici t ht hA hB hBA hspA hspB
 
-/-- Spectral-order version of `LownerHeinzCore.operatorConvexOn_one_div_add_t_Ici`. -/
-theorem operatorConvexOn_one_div_add_t_Ici :
-  ∀ t : ℝ, 0 < t →
+/-- Spectral-order version of `LownerHeinzCore.one_div_add_t_operatorConvexOn_Ici`. -/
+theorem one_div_add_t_operatorConvexOn_Ici (t : ℝ) (ht : 0 < t) :
     OperatorConvexOn (𝓐 := 𝓐) (Set.Ici (0 : ℝ)) (fun x : ℝ ↦ 1 / (x + t)) := by
-  intro t ht
-  simpa using (LownerHeinzCore.operatorConvexOn_one_div_add_t_Ici (𝓐 := 𝓐) t ht)
+  simpa using (LownerHeinzCore.one_div_add_t_operatorConvexOn_Ici (𝓐 := 𝓐) t ht)
 
 omit [Nontrivial 𝓐] in
 /-- Spectral-order version of `LownerHeinzCore.ratio_add_t_operatorMonotoneOn_Ici`. -/
-theorem ratio_add_t_operatorMonotoneOn_Ici :
-  ∀ t : ℝ, 0 < t →
+theorem ratio_add_t_operatorMonotoneOn_Ici (t : ℝ) (ht : 0 < t) :
     OperatorMonotoneOn (𝓐 := 𝓐) (Set.Ici (0 : ℝ)) (fun x : ℝ ↦ x / (x + t)) := by
-  intro t ht
   simpa using (LownerHeinzCore.ratio_add_t_operatorMonotoneOn_Ici (𝓐 := 𝓐) t ht)
 
 omit [Nontrivial 𝓐] in
@@ -98,18 +93,15 @@ theorem cfcR_ratio_add_le_cfcR_ratio_add_of_le {t : ℝ} (ht : 0 < t)
     cfcR (fun x : ℝ ↦ x / (x + t)) B ≤ cfcR (fun x : ℝ ↦ x / (x + t)) A :=
   ratio_add_t_operatorMonotoneOn_Ici t ht hA hB hBA hspA hspB
 
-/-- Spectral-order version of `LownerHeinzCore.operatorConcaveOn_ratio_add_t_Ici`. -/
-theorem operatorConcaveOn_ratio_add_t_Ici :
-  ∀ t : ℝ, 0 < t →
+/-- Spectral-order version of `LownerHeinzCore.ratio_add_t_operatorConcaveOn_Ici`. -/
+theorem ratio_add_t_operatorConcaveOn_Ici (t : ℝ) (ht : 0 < t) :
     OperatorConcaveOn (𝓐 := 𝓐) (Set.Ici (0 : ℝ)) (fun x : ℝ ↦ x / (x + t)) := by
-  intro t ht
-  simpa using (LownerHeinzCore.operatorConcaveOn_ratio_add_t_Ici (𝓐 := 𝓐) t ht)
+  simpa using (LownerHeinzCore.ratio_add_t_operatorConcaveOn_Ici (𝓐 := 𝓐) t ht)
 
 omit [Nontrivial 𝓐] in
 /-- Spectral-order version of `LownerHeinzCore.power_Icc_zero_one_operatorMonotoneOn_Ici`. -/
-theorem power_Icc_zero_one_operatorMonotoneOn_Ici : ∀ p ∈ Set.Icc (0 : ℝ) 1,
+theorem power_Icc_zero_one_operatorMonotoneOn_Ici (p : ℝ) (hp : p ∈ Set.Icc (0 : ℝ) 1) :
     OperatorMonotoneOn (𝓐 := 𝓐) (Set.Ici (0 : ℝ)) (fun x ↦ x ^ p) := by
-  intro p hp
   simpa using (LownerHeinzCore.power_Icc_zero_one_operatorMonotoneOn_Ici (𝓐 := 𝓐) p hp)
 
 omit [Nontrivial 𝓐] in
@@ -122,24 +114,22 @@ theorem cfcR_rpow_le_cfcR_rpow_of_le {p : ℝ} (hp : p ∈ Set.Icc (0 : ℝ) 1)
     cfcR (fun x : ℝ ↦ x ^ p) B ≤ cfcR (fun x : ℝ ↦ x ^ p) A :=
   power_Icc_zero_one_operatorMonotoneOn_Ici p hp hA hB hBA hspA hspB
 
-/-- Spectral-order version of `LownerHeinzCore.operatorConcaveOn_rpow_Ici`. -/
-theorem operatorConcaveOn_rpow_Ici : ∀ p ∈ Set.Icc (0 : ℝ) 1,
+/-- Spectral-order version of `LownerHeinzCore.power_Icc_zero_one_operatorConcaveOn_Ici`. -/
+theorem power_Icc_zero_one_operatorConcaveOn_Ici (p : ℝ) (hp : p ∈ Set.Icc (0 : ℝ) 1) :
     OperatorConcaveOn (𝓐 := 𝓐) (Set.Ici (0 : ℝ)) (fun x ↦ x ^ p) := by
-  intro p hp
-  simpa using (LownerHeinzCore.operatorConcaveOn_rpow_Ici (𝓐 := 𝓐) p hp)
+  simpa using (LownerHeinzCore.power_Icc_zero_one_operatorConcaveOn_Ici (𝓐 := 𝓐) p hp)
 
-/-- Spectral-order version of `LownerHeinzCore.operatorConvexOn_rpow_Ici`. -/
-theorem operatorConvexOn_rpow_Ici : ∀ p ∈ Set.Icc (1 : ℝ) 2,
+/-- Spectral-order version of `LownerHeinzCore.power_Icc_one_two_operatorConvexOn_Ici`. -/
+theorem power_Icc_one_two_operatorConvexOn_Ici (p : ℝ) (hp : p ∈ Set.Icc (1 : ℝ) 2) :
     OperatorConvexOn (𝓐 := 𝓐) (Set.Ici (0 : ℝ)) (fun x ↦ x ^ p) := by
-  intro p hp
-  simpa using (LownerHeinzCore.operatorConvexOn_rpow_Ici (𝓐 := 𝓐) p hp)
+  simpa using (LownerHeinzCore.power_Icc_one_two_operatorConvexOn_Ici (𝓐 := 𝓐) p hp)
 
 omit [Nontrivial 𝓐] in
 /-- Spectral-order version of
 `LownerHeinzCore.power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi`. -/
-theorem power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi : ∀ p ∈ Set.Icc (-1 : ℝ) 0,
+theorem power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi (p : ℝ)
+    (hp : p ∈ Set.Icc (-1 : ℝ) 0) :
     OperatorMonotoneOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x ↦ -(x ^ p)) := by
-  intro p hp
   simpa using (LownerHeinzCore.power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi (𝓐 := 𝓐) p hp)
 
 omit [Nontrivial 𝓐] in
@@ -154,11 +144,11 @@ theorem cfcR_neg_rpow_le_cfcR_neg_rpow_of_le {p : ℝ}
   power_Icc_neg_one_zero_neg_operatorMonotoneOn_Ioi p hp hA hB hBA hspA hspB
 
 /-- Spectral-order version of
-`LownerHeinzCore.operatorConcaveOn_neg_rpow_Ioi`. -/
-theorem operatorConcaveOn_neg_rpow_Ioi : ∀ p ∈ Set.Icc (-1 : ℝ) 0,
+`LownerHeinzCore.power_Icc_neg_one_zero_neg_operatorConcaveOn_Ioi`. -/
+theorem power_Icc_neg_one_zero_neg_operatorConcaveOn_Ioi (p : ℝ)
+    (hp : p ∈ Set.Icc (-1 : ℝ) 0) :
     OperatorConcaveOn (𝓐 := 𝓐) (Set.Ioi (0 : ℝ)) (fun x ↦ -(x ^ p)) := by
-  intro p hp
-  simpa using (LownerHeinzCore.operatorConcaveOn_neg_rpow_Ioi (𝓐 := 𝓐) p hp)
+  simpa using (LownerHeinzCore.power_Icc_neg_one_zero_neg_operatorConcaveOn_Ioi (𝓐 := 𝓐) p hp)
 
 omit [Nontrivial 𝓐] in
 /-- Spectral-order version of `LownerHeinzCore.power_Icc_neg_one_zero_operatorAntitoneOn_Ioi`. -/
